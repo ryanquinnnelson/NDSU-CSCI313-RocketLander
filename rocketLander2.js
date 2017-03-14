@@ -9,13 +9,18 @@ const PIXELS_PER_METER = 496 / 52;  //ratio of height in pixels vs. height in me
 
 
 var gravity = 9.81; // m/s/s
-
+var initialVelocityX = 0;
+var initialVelocityY = 0;
+var initialVelocityA = 0;   //angular
+var initialPositionX = 400;
+var initialPositionY = 0;
+var initialRotation = 0; //radians
 
 
 
 var stage, queue, rocket_sheet, fire_sheet, thruster_sheet;
 var rocket;
-var forces, accelerations;
+var forces, accelerations, velocities, displacement, momentum;
 var fsText, resultant;
 
 
@@ -41,7 +46,7 @@ function load(){
     
     //game objects
     buildSpriteSheets();
-    buildRocket(400,400,90);
+    buildRocket(initialPositionX,initialPositionY,-90);
     //buildRect(0,0,575,400,"red");
     
     
@@ -49,6 +54,9 @@ function load(){
     //forces
     resetForces();
     resetAccelerations();
+    resetVelocities();
+    resetDisplacement();
+    resetMomentum();
     setDefaultForces(rocket);
 
     
@@ -68,7 +76,8 @@ function load(){
 //=================================================================================//
 function run(e){
     if(!e.paused){
-        updateRocket();
+        updateRocket(e);
+        renderRocket(e);
         updateStats();
         stage.update();
     }
@@ -83,20 +92,34 @@ function pause(e){
 //                                  Movement                                       //
 //=================================================================================//
 
-function updateRocket(){
+function updateRocket(e){
     sumForces(rocket);
     calcAccelerations(rocket);
+    calcVelocities(e);
+    calcDisplacement(e);
+    calcMomentum(rocket, e);
     calcNextPosition(rocket);
 }
+
 function calcNextPosition(target){
     
-    //get acceleration values
+    var nextX;
+    var nextY;
+    var nextAngle;
+    
+    nextX = target.x - (displacement.x / PIXELS_PER_METER);
+    nextY = target.y - (displacement.y / PIXELS_PER_METER);
+    nextAngle = target.rotation - (radiansToDegrees(displacement.angle));
     
     
-    
-    
-    
-    
+    target.nextX = nextX;
+    target.nextY = nextY;
+    target.nextAngle = nextAngle;
+}
+function renderRocket(e){
+    rocket.x = rocket.nextX;
+    rocket.y = rocket.nextY;
+    rocket.rotation = rocket.nextAngle;
 }
 
 //=================================================================================//
@@ -112,21 +135,54 @@ function calcAccelerations(target){
     accelerations.vertical = forces.yComponent / target.mass;
     
     //angular acceleration = Torque (kN * m) / Moment of Inertia (kg * m^2)
-    accelerations.angular = forces.torque / target.moment_of_inertia;
+    accelerations.angular = (forces.torque / target.moment_of_inertia);
 }
 
-function getAngularAcceleration(target){
+
+function calcVelocities(e){
     
+    var sec;
     
+    sec = e.runTime / 1000;
+    //alert(initialVelocityX);
+    //linear velocity = v0 + acceleration * time
+    velocities.horizontal = initialVelocityX + accelerations.horizontal * sec;
+    velocities.vertical = initialVelocityY + accelerations.vertical * sec;
+    
+    //angular velocity = v0 + angular acceleration * time
+    //increases over time, as opposed to constant acceleration due to gravity
+    velocities.angular = velocities.angular/1.05 + (accelerations.angular * sec);
 }
+
+function calcDisplacement(e){
+    
+    var sec;
+    
+    sec = e.runTime / 1000;
+    
+    //linear displacement = v0 * time + 0.5 * (a * time * time)
+    displacement.x = initialVelocityX * sec + (0.5 * accelerations.horizontal * sec * sec);
+    
+    displacement.y = initialVelocityY * sec + (0.5 * accelerations.vertical * sec * sec);
+    
+    displacement.angle = initialRotation + (velocities.angular * sec)/PIXELS_PER_METER;
+    //= initialRotation * sec + (0.5 * accelerations.angular * sec * sec);
+}
+
+function calcMomentum(target, e){
+    //linear momentum = mass * velocity
+    
+    //angular momentum = moment of inertia * angular velocity
+    momentum.angular = target.moment_of_inertia * velocities.angular;
+    //alert(momentum.angular);
+}
+
 /*
     Adding two forces due to gravity, one acting in the upper section and the second acting in the lower section. This results in a more natural rotation if the rocket is angled, rather than if a single gravity force was acting through the center of mass (resulting in no rotation).
  
  //distances are from the top of the target, downward
  */
 function setDefaultForces(target){
-    
-    
 
     var gravityTop, gravityBottom, ratio;
     var topDistance, bottomDistance, remainder;
@@ -299,9 +355,24 @@ function resetForces(){
     
     forces = {xComponent: 0, yComponent: 0, torque: 0};
 }
+
 function resetAccelerations(){
     
     accelerations = {horizontal: 0, vertical: 0, angular: 0};
+}
+
+//given starting values
+function resetVelocities(){
+    
+    velocities = {horizontal: initialVelocityX, vertical: initialVelocityY, angular: initialVelocityA};
+}
+
+function resetDisplacement(){
+    displacement = {x : initialPositionX, y: initialPositionY, angle: initialRotation};
+}
+
+function resetMomentum(){
+    momentum = {x : 0, y: 0, angular: 0};
 }
 
 
@@ -321,6 +392,9 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     rocket.height = 496;            //distance from top of rocket to bottom of engines
     rocket.mass = DRY_MASS + RESIDUAL_PROPELLANT;
     rocket.moment_of_inertia = MOMENT_OF_INERTIA;
+    rocket.nextX = 0;
+    rocket.nextY = 0;
+    rocket.nextAngle = 0;
     
     //CreateJS properties
     rocket.regY = rocket.center_of_mass;    //vertical registration point
@@ -492,14 +566,20 @@ function displayStats(color){
     
     m ="Mass: " + rocket.mass
     + " kg\n\n------------------------------"
-    + "\n\nForce (x): " + Math.round(forces.xComponent)
-    + " kN\n\nForce (y):  " + Math.round(forces.yComponent)
-    + " kN\n\nTorque:  " + Math.round(forces.torque)
+    + "\n\nForce (x): " + (forces.xComponent).toFixed(2)
+    + " kN\n\nForce (y):  " + (forces.yComponent).toFixed(2)
+    + " kN\n\nTorque:  " + (forces.torque).toFixed(2)
     + " kN*m\n\n------------------------------"
-    + "\n\nAcceleration (x): " + Math.round(accelerations.horizontal)
-    + " m/s/s\n\nAcceleration (y): " + Math.round(accelerations.vertical)
-    + " m/s/s\n\nAcceleration (angular): " + Math.round(accelerations.angular)
-    + " rad/s/s";
+    + "\n\nAcceleration (x): " + (accelerations.horizontal).toFixed(2)
+    + " m/s/s\n\nAcceleration (y): " + (accelerations.vertical).toFixed(2)
+    + " m/s/s\n\nAcceleration (angular): " + (accelerations.angular).toFixed(2)
+    + " rad/s/s\n\n\nVelocity (x) : " + (velocities.horizontal).toFixed(2)
+    + " m/s\n\nVelocity (y) : " + (velocities.vertical).toFixed(2)
+    + " m/s\n\nVelocity (angular): " + (velocities.angular).toFixed(2)
+    + " rad/s\n\n\nDisplacement (x) : " + (displacement.x).toFixed(2)
+    + " m\n\nDisplacement (y): " + (displacement.y).toFixed(2)
+    + " m\n\nDisplacement (angle): " + (displacement.angle).toFixed(2)
+    + " rad";
     
     fsText = new createjs.Text( m, "20px Arial", color);
     fsText.x = stage.canvas.width - 350;
@@ -513,14 +593,20 @@ function updateStats(){
     
     m ="Mass: " + rocket.mass
     + " kg\n\n------------------------------"
-    + "\n\nForce (x): " + Math.round(forces.xComponent)
-    + " kN\n\nForce (y):  " + Math.round(forces.yComponent)
-    + " kN\n\nTorque:  " + Math.round(forces.torque)
+    + "\n\nForce (x): " + (forces.xComponent).toFixed(2)
+    + " kN\n\nForce (y):  " + (forces.yComponent).toFixed(2)
+    + " kN\n\nTorque:  " + (forces.torque).toFixed(2)
     + " kN*m\n\n------------------------------"
-    + "\n\nAcceleration (x): " + Math.round(accelerations.horizontal)
-    + " m/s/s\n\nAcceleration (y): " + Math.round(accelerations.vertical)
-    + " m/s/s\n\nAcceleration (angular): " + Math.round(accelerations.angular)
-    + " rad/s/s";
+    + "\n\nAcceleration (x): " + (accelerations.horizontal).toFixed(2)
+    + " m/s/s\n\nAcceleration (y): " + (accelerations.vertical).toFixed(2)
+    + " m/s/s\n\nAcceleration (angular): " + (accelerations.angular).toFixed(2)
+    + " rad/s/s\n\n\nVelocity (x) : " + (velocities.horizontal).toFixed(2)
+    + " m/s\n\nVelocity (y) : " + (velocities.vertical).toFixed(2)
+    + " m/s\n\nVelocity (angular): " + (velocities.angular).toFixed(2)
+    + " rad/s\n\n\nDisplacement (x) : " + (displacement.x).toFixed(2)
+    + " m\n\nDisplacement (y): " + (displacement.y).toFixed(2)
+    + " m\n\nDisplacement (angle): " + (displacement.angle).toFixed(2)
+    + " rad";
     
     fsText.text = m;
 }

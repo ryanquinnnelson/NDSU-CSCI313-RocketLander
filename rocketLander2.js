@@ -1,14 +1,31 @@
+//=================================================================================//
+//                                   Variables                                     //
+//=================================================================================//
+//SpaceX Falcon 9 first stage rocket data
+const DRY_MASS = 26500; //kg
+const RESIDUAL_PROPELLANT = 1000; //kg
+const MOMENT_OF_INERTIA = 3.06 * Math.pow(10,6);    //kg * m^3
+const PIXELS_PER_METER = 496 / 52;  //height in pixels / height in meters
+
+
+var gravity = 9.81; // m/s/svar gravity = 9.81; //m/s/s
+
+
+
+
 var stage, queue, rocket_sheet, fire_sheet, thruster_sheet;
 var rocket;
 var forceSummary, resultant;
 var fsText;
 
 
-var gravity = 9.81; //m/s/s
 
-const DRY_MASS = 26500; //kg
-const RESIDUAL_PROPELLANT = 1000; //kg
 
+
+
+//=================================================================================//
+//                                   Startup                                       //
+//=================================================================================//
 function init(){
     queue = new createjs.LoadQueue(false);
     queue.addEventListener("complete", load);
@@ -22,10 +39,12 @@ function init(){
 function load(){
     stage = new createjs.Stage("canvas");
     
+    //game objects
     buildSpriteSheets();
-    buildRocket(400,400,45);
-    buildRect(0,0,575,400,"red");
+    buildRocket(400,400,90);
+    //buildRect(0,0,575,400,"red");
     
+    //ticker
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener("tick", run);
     
@@ -33,6 +52,8 @@ function load(){
     setDefaultForces(rocket);
     sumForces(rocket);
     displayResultant(rocket, "green");
+    
+    //GUI
     displayForceSummary(rocket, "white");
 }
 
@@ -41,6 +62,7 @@ function load(){
 //                                Game Mechanics                                   //
 //=================================================================================//
 function run(e){
+    
     stage.update();
 }
 
@@ -111,17 +133,10 @@ function addForce(x,y, magnitude, direction, target){ //alert("addForce()");
 
 
 function sumForces(target){
-    var conversion, targetPt, xTotal, yTotal, mTotal, current, xForce, yForce, forcePt, momentArm;
     
-    //get number of pixels per meter based on image
-    conversion = target.height / 52;    //actual first stage is 52.00 m tall
+    var xTotal, yTotal, mTotal, current, xForce, yForce, xMoment, yMoment;
     
-    
-    //get target center of mass, relative to stage
-    targetPt = target.localToGlobal(target.regX, target.regY);
-    
-    
-    
+    //set initial values
     xTotal = yTotal = mTotal = 0;
     
     for(i = 0; i < target.children.length; i++){ //for each child in target
@@ -134,25 +149,23 @@ function sumForces(target){
         
         //force
         //x component
-        xForce = getXComponent(current);
+        xForce = calcForceComponent(current, "x");
         xTotal += xForce;
         
         //y component
-        yForce = getYComponent(current);
+        yForce = calcForceComponent(current, "y");
         yTotal += yForce;
         
         //moment
-        //get force x,y relative to stage
-        forcePt = current.localToGlobal(current.regX,current.regY);
+        //x component
+        xMoment = calcMomentComponent(current, "x", {x: xForce, y: yForce});
+        mTotal += xMoment;
         
-        //calculate xForce moment arm as difference in the y's of target, child
-        momentArm = (targetPt.y - forcePt.y) / conversion;
-        mTotal += xForce * momentArm;
-        
-        //calculate yForce moment arm as difference in the x's of target, child
-        momentArm = (forcePt.x - targetPt.x) / conversion;
-        mTotal += yForce * momentArm;
+        //y component
+        yMoment = calcMomentComponent(current, "y", {x: xForce, y: yForce});
+        mTotal += yMoment;
     } //end for
+    
     
     //simplify if close to zero
     if(Math.abs(xTotal) < 1){ //value is extremely small
@@ -171,25 +184,55 @@ function sumForces(target){
     forceSummary.moment = mTotal;
 }
 
+function calcMomentComponent(force, type, components){
+    var parent, momentArm, moment;
+    
+    //get container of force
+    parent = force.parent;
+
+    //get current x,y of parent center of mass, relative to stage
+    centerPt = parent.localToGlobal(parent.regX, parent.regY);
+    
+    //get force x,y relative to stage
+    forcePt = force.localToGlobal(force.regX,force.regY);
+
+    switch(type){
+        case "x":
+            //calculate moment arm as difference in the y's of target, child
+            //convert from pixels into meters
+            momentArm = (centerPt.y - forcePt.y) / PIXELS_PER_METER;
+            moment = components.x * momentArm;
+            break;
+            
+        case "y":
+            //calculate moment arm as difference in the x's of target, child
+            //convert from pixels into meters
+            momentArm = (forcePt.x - centerPt.x) / PIXELS_PER_METER;
+            moment = components.y * momentArm;
+            break;
+    }
+    return moment;
+}
 
 
-function getXComponent(force){
+function calcForceComponent(force,type){
 
-    var radians;
+    var radians, component;
     
     radians = degreesToRadians(force.direction);
     
-    return Math.cos(radians) * force.magnitude;
+    switch(type){
+        case "x":
+            component = Math.cos(radians) * force.magnitude;
+            break;
+        case "y":
+            component = Math.sin(radians) * force.magnitude;
+            break;
+    }
+    
+    return component;
 }
 
-function getYComponent(force){
-
-    var radians;
-    
-    radians = degreesToRadians(force.direction);
-    
-    return Math.sin(radians) * force.magnitude;
-}
 
 
 function degreesToRadians(degrees){
@@ -237,7 +280,7 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     buildLegs();
     buildFire();
     buildThrusters();
-    displayCenterOfMass(rocket, "red", 10);
+    buildCenterOfMass(rocket, "red", 10);
     
     //add to stage
     stage.addChild(rocket);
@@ -318,11 +361,7 @@ function buildThrusters(){ //alert("buildThrusters()");
     
 }
 
-//=================================================================================//
-//                                     Graphics                                    //
-//=================================================================================//
-
-function displayCenterOfMass(target, color, radius){
+function buildCenterOfMass(target, color, radius){
     var com, add;
     
     //Shape
@@ -333,7 +372,7 @@ function displayCenterOfMass(target, color, radius){
     com.x = target.regX;
     com.y = target.regY;
     com.name = "center of mass";
-    
+    com.visible = false;
     
     //graphics
     add = radius*1.5;
@@ -341,8 +380,15 @@ function displayCenterOfMass(target, color, radius){
     com.graphics.moveTo(-add,0).lineTo(add, 0);
     com.graphics.moveTo(0,-add).lineTo(0,add);
     
+    //add to container
     target.addChild(com);
 }
+
+//=================================================================================//
+//                                       GUI                                       //
+//=================================================================================//
+
+
 
 //add arrowhead to vector
 function displayResultant(target, color){ //alert("displayResultant()");
@@ -390,8 +436,8 @@ function displayResultant(target, color){ //alert("displayResultant()");
 function displayForceSummary(target, color){
     var m;
     
-    m ="xComponent:  " + Math.round(forceSummary.xComponent)
-     + " kN\n\nyComponent:  " + Math.round(forceSummary.yComponent)
+    m ="Force (x):  " + Math.round(forceSummary.xComponent)
+     + " kN\n\nForce (y):  " + Math.round(forceSummary.yComponent)
      + " kN\n\nMoment:  " + Math.round(forceSummary.moment) + " kN*m";
     
     fsText = new createjs.Text( m, "24px Arial", color);

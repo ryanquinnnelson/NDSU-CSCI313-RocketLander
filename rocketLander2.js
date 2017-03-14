@@ -23,7 +23,7 @@ function load(){
     stage = new createjs.Stage("canvas");
     
     buildSpriteSheets();
-    buildRocket(400,400,90);
+    buildRocket(400,400,45);
     buildRect(0,0,575,400,"red");
     
     createjs.Ticker.framerate = 60;
@@ -31,7 +31,7 @@ function load(){
     
     //forces
     setDefaultForces(rocket);
-    getResultant(rocket);
+    sumForces(rocket);
     displayResultant(rocket, "green");
     displayForceSummary(rocket, "white");
 }
@@ -60,30 +60,20 @@ function setDefaultForces(target){
     var gravityTop, gravityBottom, ratio;
     var topDistance, bottomDistance, remainder;
     
-    //percentage of mass below center of mass
-    ratio = target.center_of_mass / target.height;
-    
     //top gravitational force
-    gravity1 = gravity * target.mass * (1-ratio); //percent of gravity force for top
+    gravity1 = gravity * target.mass * 0.25;     //percent of gravity force for top
     length1 = target.center_of_mass / 2;        //middle of upper section
-    //alert(length1);
     
     //bottom gravitational force
-    gravity2 = gravity * target.mass * ratio; //percent for bottom
+    gravity2 = gravity * target.mass * 0.75; //percent for bottom
     remainder = (target.height - target.center_of_mass);
     length2 = remainder/2 + target.center_of_mass; //middle of lower section
-    //alert(length2);
     
     //add forces to target
     addForce(0, length1, gravity1, 270, target); //straight down
     addForce(0, length2, gravity2, 270, target); //straight down
 }
 
-function getResultant(target){ //alert("getResultant()");
-    
-    sumForces(target);
-    sumMoments(target);
-}
 
 
 
@@ -118,10 +108,9 @@ function addForce(x,y, magnitude, direction, target){ //alert("addForce()");
     
     //add to container
     target.addChild(force);
-    target.forces.push(force);  //add to array for processing
 }
 
-
+/*
 function sumForces2(target){ //alert("sumForces()");
  
     var i, xTotal, yTotal, xForce, yForce;
@@ -156,9 +145,19 @@ function sumForces2(target){ //alert("sumForces()");
     forceSummary.yComponent = yTotal;  //store value
     //alert(forceSummary.xComponent + "," + forceSummary.yComponent);
 }
+ */
 
 function sumForces(target){
     var i, xTotal, yTotal, xForce, yForce;
+    var momentArm, targetPt, forcePt, current;
+    
+    //get number of pixels per meter based on image
+    conversion = target.height / 52;    //actual first stage is 52.00 m tall
+    
+    
+    //get target center of mass, relative to stage
+    targetPt = target.localToGlobal(target.regX, target.regY);
+    
     
     
     xTotal = yTotal = momentTotal = 0;
@@ -167,20 +166,33 @@ function sumForces(target){
         
         current = target.children[i];
         
-        if(current.name !== "force"){
-            continue;
+        if(current.name !== "force"){   //child is not a force
+            continue;   //skip this iteration
         }
         
-        //x component
+        //force x component
         xForce = getXComponent(current);
         xTotal += xForce;
         
-        //y component
+        //force y component
         yForce = getYComponent(current);
         yTotal += yForce;
         
-        //alert("xForce: " + xForce + ", yForce: " + yForce);
-    }
+        //moment
+        forcePt = current.localToGlobal(current.regX,current.regY);
+        //alert(targetPt + ";" + forcePt);
+        
+        //calculate xForce moment arm as difference in the y's of target, child
+        momentArm = (targetPt.y - forcePt.y) / conversion;
+        //alert("xForce: " + momentArm + "," + xForce);
+        momentTotal += xForce * momentArm;
+        
+        
+        //calculate yForce moment arm as difference in the x's of target, child
+        momentArm = (forcePt.x - targetPt.x) / conversion;
+        //alert("yForce: " + momentArm + "," + yForce);
+        momentTotal += yForce * momentArm;
+    } //end for
     
     
     if(Math.abs(xTotal) < 1){ //value is extremely small
@@ -189,9 +201,15 @@ function sumForces(target){
     if(Math.abs(yTotal) < 1){ //value is extremely small
         yTotal = 0;
     }
+    if(Math.abs(momentTotal) < 1){ //value is extremely small
+        momentTotal = 0;
+    }
     
-    forceSummary.xComponent = xTotal;  //store value
-    forceSummary.yComponent = yTotal;  //store value
+    
+    //store values
+    forceSummary.xComponent = xTotal;
+    forceSummary.yComponent = yTotal;
+    forceSummary.moment = momentTotal;
     //alert(forceSummary.xComponent + "," + forceSummary.yComponent);
 }
 
@@ -227,6 +245,7 @@ function sumForces(target){
     -  0 degrees is vertical
     -  degrees increase in clockwise direction
  */
+/*
 function sumMoments(target){
     
     var conversion, momentTotal, i, current;
@@ -274,7 +293,7 @@ function sumMoments(target){
         
         
         
-        /*
+ 
         //determine direction of force, relative to target coordinate system
         relativeDirection = current.direction + target.rotation;
         radians = degreesToRadians(relativeDirection);
@@ -300,7 +319,7 @@ function sumMoments(target){
         moment = xForce * moment_arm;
         momentTotal += moment;
         //alert(moment);
-         */
+ 
     } //end for
     
     
@@ -311,7 +330,7 @@ function sumMoments(target){
     forceSummary.moment = momentTotal; //store value
     //alert(forceSummary.moment);
 }
-
+*/
 
 
 function getXComponent(force){
@@ -363,7 +382,7 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     rocket.body_width = 39;         //width in pixels of rocket body
     rocket.center_of_mass = 351;    //distance in pixels from top of rocket to C.O.M.
     rocket.height = 496;            //distance from top of rocket to bottom of engines
-    rocket.forces = [];             //forces acting on rocket
+    //rocket.forces = [];             //forces acting on rocket
     rocket.mass = DRY_MASS + RESIDUAL_PROPELLANT;
     
     //CreateJS properties

@@ -1,6 +1,9 @@
 var stage, queue, rocket_sheet, fire_sheet;
 var rocket;
 var forceSummary, resultant;
+var fsText;
+
+
 var gravity = 9.81; //m/s/s
 
 const DRY_MASS = 26500; //kg
@@ -19,7 +22,7 @@ function load(){
     stage = new createjs.Stage("canvas");
     
     buildSpriteSheets();
-    buildRocket(400,400,0);
+    buildRocket(400,400,-45);
     buildRect(0,0,400,300,"red");
     
     createjs.Ticker.framerate = 60;
@@ -29,6 +32,7 @@ function load(){
     setDefaultForces(rocket);
     getResultant(rocket);
     displayResultant(rocket, "green");
+    displayForceSummary(rocket, "white");
 }
 
 
@@ -283,7 +287,7 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     buildBody();
     buildLegs();
     buildFire();
-    buildCenterOfMass(rocket, "red", 10);
+    displayCenterOfMass(rocket, "red", 10);
     
     //add to stage
     stage.addChild(rocket);
@@ -341,7 +345,7 @@ function buildFire(){//alert("buildFire()");
 //                                     Graphics                                    //
 //=================================================================================//
 
-function buildCenterOfMass(target, color, radius){
+function displayCenterOfMass(target, color, radius){
     var com, add;
     
     //Shape
@@ -363,12 +367,12 @@ function buildCenterOfMass(target, color, radius){
     target.addChild(com);
 }
 
-
+//add arrowhead to vector
 function displayResultant(target, color){ //alert("displayResultant()");
 
-    var xLength, yLength, rLength;
-    var squared, radians, degrees, angle;
-    var globalPt;
+    var xLength, yLength, rLength, xDiff, Diff;
+    var radians, degrees, angle;
+    var globalPt, endPt;
     
     //Shape
     stage.removeChild(resultant);   //remove old version if it exists
@@ -378,39 +382,46 @@ function displayResultant(target, color){ //alert("displayResultant()");
     //convert force components (kN) into pixel lengths
     xLength = forceSummary.xComponent / 1000;
     yLength = forceSummary.yComponent / 1000;
-    
-    //calculate resultant length in pixels
-    squared = Math.pow(xLength,2) + Math.pow(yLength,2);
-    rLength = Math.sqrt(squared);
-    
-    //determine angle in radians
-    radians = Math.atan(yLength/xLength) * -1;
-    
-    //determine angle in degrees
-    degrees = radiansToDegrees(radians);
-    
-    //convert to CreateJS format
-    angle = degrees + 90;
 
+    //determine x,y of target center of mass, relative to stage
     globalPt = target.localToGlobal(target.regX, target.regY);
-    //alert(globalPt);
+    
+    //determine x,y of endpoint of line, relative to stage
+    endPt = new createjs.Point(xLength, yLength*-1);
+    
+    //calculate rotation for arrowhead, based on these points
+    xDiff = endPt.x - globalPt.x;
+    yDiff = endPt.y - globalPt.y;
+    radians = Math.atan(yDiff/xDiff);
+    //alert(radiansToDegrees(radians));
+
     
     //properties
     resultant.x = globalPt.x;
     resultant.y = globalPt.y;
-    resultant.regX = globalPt.x;
-    resultant.regY = globalPt.y;
     resultant.name = "resultant";
-    resultant.rotation = angle;
     
     //graphics
     resultant.graphics.setStrokeStyle(6, "round").beginStroke(color);
-    resultant.graphics.moveTo(resultant.x, resultant.y).lineTo(resultant.x, resultant.y - rLength);
-    resultant.graphics.moveTo(resultant.x-10, resultant.y - rLength + 10);
-    resultant.graphics.lineTo(resultant.x, resultant.y - rLength);
-    resultant.graphics.lineTo(resultant.x + 10, resultant.y - rLength + 10);
+    resultant.graphics.moveTo(0, 0);
+    resultant.graphics.lineTo(endPt.x, endPt.y);
+
     
     stage.addChild(resultant);
+}
+
+function displayForceSummary(target, color){
+    var m;
+    
+    m ="xComponent:  " + Math.round(forceSummary.xComponent)
+     + " kN\n\nyComponent:  " + Math.round(forceSummary.yComponent)
+     + " kN\n\nMoment:  " + Math.round(forceSummary.moment) + " kN*m";
+    
+    fsText = new createjs.Text( m, "24px Arial", color);
+    fsText.x = stage.canvas.width - 350;
+    fsText.y = 50;
+    
+    stage.addChild(fsText);
 }
 
 //=================================================================================//

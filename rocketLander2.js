@@ -78,8 +78,8 @@ function setDefaultForces(target){
 
 
 /*
-        x:      x-coordinate where force acts
-        y:      y-coordinate where force acts
+        x:      x-coordinate where force acts, relative to target
+        y:      y-coordinate where force acts, relative to target
         m:      magnitude in kilonewtons (kN)
         dir:    direction of force vector in degrees, with 0 degrees according to standard geometry convention (horizontal). Degrees increase in counterclockwise fashion according to geometry convention as well.
  
@@ -99,57 +99,19 @@ function addForce(x,y, magnitude, direction, target){ //alert("addForce()");
     force.x = x;
     force.y = y;
     force.name = "force";
+    force.graphics.beginFill("blue").drawCircle(0,0,2);
     
     //dynamically injected properties
     force.magnitude = magnitude;
     force.direction = direction;
     
-    force.graphics.beginFill("blue").drawCircle(0,0,2);
-    
     //add to container
     target.addChild(force);
 }
 
-/*
-function sumForces2(target){ //alert("sumForces()");
- 
-    var i, xTotal, yTotal, xForce, yForce;
-    
-    
-    xTotal = yTotal = 0;
-    
-    for(i = 0; i < target.forces.length; i++){
-        
-        current = target.forces[i];
-        
-        //x component
-        xForce = getXComponent(current);
-        xTotal += xForce;
-        
-        //y component
-        yForce = getYComponent(current);
-        yTotal += yForce;
-        
-        alert("xForce: " + xForce + ", yForce: " + yForce);
-    }
-    
-
-    if(Math.abs(xTotal) < 1){ //value is extremely small
-        xTotal = 0;
-    }
-    if(Math.abs(yTotal) < 1){ //value is extremely small
-        yTotal = 0;
-    }
-    
-    forceSummary.xComponent = xTotal;  //store value
-    forceSummary.yComponent = yTotal;  //store value
-    //alert(forceSummary.xComponent + "," + forceSummary.yComponent);
-}
- */
 
 function sumForces(target){
-    var i, xTotal, yTotal, xForce, yForce;
-    var momentArm, targetPt, forcePt, current;
+    var conversion, targetPt, xTotal, yTotal, mTotal, current, xForce, yForce, forcePt, momentArm;
     
     //get number of pixels per meter based on image
     conversion = target.height / 52;    //actual first stage is 52.00 m tall
@@ -160,7 +122,7 @@ function sumForces(target){
     
     
     
-    xTotal = yTotal = momentTotal = 0;
+    xTotal = yTotal = mTotal = 0;
     
     for(i = 0; i < target.children.length; i++){ //for each child in target
         
@@ -170,167 +132,45 @@ function sumForces(target){
             continue;   //skip this iteration
         }
         
-        //force x component
+        //force
+        //x component
         xForce = getXComponent(current);
         xTotal += xForce;
         
-        //force y component
+        //y component
         yForce = getYComponent(current);
         yTotal += yForce;
         
         //moment
+        //get force x,y relative to stage
         forcePt = current.localToGlobal(current.regX,current.regY);
-        //alert(targetPt + ";" + forcePt);
         
         //calculate xForce moment arm as difference in the y's of target, child
         momentArm = (targetPt.y - forcePt.y) / conversion;
-        //alert("xForce: " + momentArm + "," + xForce);
-        momentTotal += xForce * momentArm;
-        
+        mTotal += xForce * momentArm;
         
         //calculate yForce moment arm as difference in the x's of target, child
         momentArm = (forcePt.x - targetPt.x) / conversion;
-        //alert("yForce: " + momentArm + "," + yForce);
-        momentTotal += yForce * momentArm;
+        mTotal += yForce * momentArm;
     } //end for
     
-    
+    //simplify if close to zero
     if(Math.abs(xTotal) < 1){ //value is extremely small
         xTotal = 0;
     }
     if(Math.abs(yTotal) < 1){ //value is extremely small
         yTotal = 0;
     }
-    if(Math.abs(momentTotal) < 1){ //value is extremely small
-        momentTotal = 0;
+    if(Math.abs(mTotal) < 1){ //value is extremely small
+        mTotal = 0;
     }
-    
     
     //store values
     forceSummary.xComponent = xTotal;
     forceSummary.yComponent = yTotal;
-    forceSummary.moment = momentTotal;
-    //alert(forceSummary.xComponent + "," + forceSummary.yComponent);
+    forceSummary.moment = mTotal;
 }
 
-/*
- Method takes each force currently acting on target and calculates a total moment in kiloNewton * meters.
- 
-    For each force acting on the target:
-    -   Determine the direction of the force in standard geometric convention (SGC), relative to the target
-        (i.e. if the target is pointing 90 degrees SGC and is acted on by a force with a direction of 180 degrees SGC, the direction of the force relative to the target is 180 degrees SGC.
- 
-        If the target is pointing 135 degrees SGC, and is acted on by a force with a direction of 225 degrees SGC, the direction of the force relative to the target is 180 degrees SGC.
- 
-        If the target is pointing 45 degrees SGC, and is acted on by a force with a direction of 225 degrees SGC, the direction of the force relative to the target is 270 degrees SGC.
- 
-    -   Determine the x,y point the force acts at, relative to target coordinate system
- 
-    -   Break the force into horizontal and vertical components
- 
-    -   Calculate the moment arm for each component
- 
-    -   Calculate the moment for each component and add to the total
- 
-    Once all individual forces have been processed, save the resulting total moment.
- 
-    Note:
-    Negative moment indicates counterclockwise torque.
- 
-    Standard geometric convention (SGC) for angle:
-    -  0 degrees is horizontal
-    -  degrees increase in counterclockwise direction
- 
-    CreateJS convention (CJS) for rotation angle:
-    -  0 degrees is vertical
-    -  degrees increase in clockwise direction
- */
-/*
-function sumMoments(target){
-    
-    var conversion, momentTotal, i, current;
-    var relativeDirection, radians, localPt, xForce, yForce, moment_arm, moment;
-    var reverse, targetPt, forcePt;
-
-    //get number of pixels per meter based on image
-    conversion = target.height / 52;    //actual first stage is 52.00 m tall
-    
-    
-    //get target center of mass, relative to stage
-    targetPt = target.localToGlobal(target.regX, target.regY);
-    
-    
-    //set starting value
-    momentTotal = 0;
-    
-    for(i = 0; i < target.children.length; i++){  //for each child in container
-        
-        current = target.children[i];
-        //alert(current);
-        
-        if(current.name !== "force"){
-            continue;
-        }
-
-        forcePt = current.localToGlobal(current.regX,current.regY);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
- 
-        //determine direction of force, relative to target coordinate system
-        relativeDirection = current.direction + target.rotation;
-        radians = degreesToRadians(relativeDirection);
-        //alert(radiansToDegrees(radians));
-        
-        //determine force x,y relative to target coordinate system
-        localPt = target.globalToLocal(current.x, current.y);
-        
-        //determine x- and y-component forces relative to this new direction
-        reverse = target.rotation < 0  ? 1 : -1;
-        //alert(target.rotation);
-        xForce = Math.sin(radians) * current.magnitude * reverse;
-        yForce = Math.cos(radians) * current.magnitude;
-        //alert(xForce + "," + yForce);
-
-        //calculate horizontal moment in kiloNewton * meters
-        moment_arm = Math.abs(target.regY - localPt.y) / conversion;
-        moment = yForce * moment_arm;
-        momentTotal += moment;
-        //alert(moment);
-        //calculate vertical moment in kiloNewton * meters
-        moment_arm = Math.abs(target.regX - localPt.x) / conversion;
-        moment = xForce * moment_arm;
-        momentTotal += moment;
-        //alert(moment);
- 
-    } //end for
-    
-    
-    if(Math.abs(momentTotal) < 1){ //value is extremely small
-        momentTotal = 0;
-    }
-    
-    forceSummary.moment = momentTotal; //store value
-    //alert(forceSummary.moment);
-}
-*/
 
 
 function getXComponent(force){
@@ -646,4 +486,144 @@ function buildRect(x, y, width, height, color){
     stage.addChild(rect);
     stage.update();
 }
+
+
+
+/*
+ Method takes each force currently acting on target and calculates a total moment in kiloNewton * meters.
+ 
+ For each force acting on the target:
+ -   Determine the direction of the force in standard geometric convention (SGC), relative to the target
+ (i.e. if the target is pointing 90 degrees SGC and is acted on by a force with a direction of 180 degrees SGC, the direction of the force relative to the target is 180 degrees SGC.
+ 
+ If the target is pointing 135 degrees SGC, and is acted on by a force with a direction of 225 degrees SGC, the direction of the force relative to the target is 180 degrees SGC.
+ 
+ If the target is pointing 45 degrees SGC, and is acted on by a force with a direction of 225 degrees SGC, the direction of the force relative to the target is 270 degrees SGC.
+ 
+ -   Determine the x,y point the force acts at, relative to target coordinate system
+ 
+ -   Break the force into horizontal and vertical components
+ 
+ -   Calculate the moment arm for each component
+ 
+ -   Calculate the moment for each component and add to the total
+ 
+ Once all individual forces have been processed, save the resulting total moment.
+ 
+ Note:
+ Negative moment indicates counterclockwise torque.
+ 
+ Standard geometric convention (SGC) for angle:
+ -  0 degrees is horizontal
+ -  degrees increase in counterclockwise direction
+ 
+ CreateJS convention (CJS) for rotation angle:
+ -  0 degrees is vertical
+ -  degrees increase in clockwise direction
+ */
+/*
+ function sumMoments(target){
+ 
+ var conversion, momentTotal, i, current;
+ var relativeDirection, radians, localPt, xForce, yForce, moment_arm, moment;
+ var reverse, targetPt, forcePt;
+ 
+ //get number of pixels per meter based on image
+ conversion = target.height / 52;    //actual first stage is 52.00 m tall
+ 
+ 
+ //get target center of mass, relative to stage
+ targetPt = target.localToGlobal(target.regX, target.regY);
+ 
+ 
+ //set starting value
+ momentTotal = 0;
+ 
+ for(i = 0; i < target.children.length; i++){  //for each child in container
+ 
+ current = target.children[i];
+ //alert(current);
+ 
+ if(current.name !== "force"){
+ continue;
+ }
+ 
+ forcePt = current.localToGlobal(current.regX,current.regY);
+ 
+ 
+ //determine direction of force, relative to target coordinate system
+ relativeDirection = current.direction + target.rotation;
+ radians = degreesToRadians(relativeDirection);
+ //alert(radiansToDegrees(radians));
+ 
+ //determine force x,y relative to target coordinate system
+ localPt = target.globalToLocal(current.x, current.y);
+ 
+ //determine x- and y-component forces relative to this new direction
+ reverse = target.rotation < 0  ? 1 : -1;
+ //alert(target.rotation);
+ xForce = Math.sin(radians) * current.magnitude * reverse;
+ yForce = Math.cos(radians) * current.magnitude;
+ //alert(xForce + "," + yForce);
+ 
+ //calculate horizontal moment in kiloNewton * meters
+ moment_arm = Math.abs(target.regY - localPt.y) / conversion;
+ moment = yForce * moment_arm;
+ momentTotal += moment;
+ //alert(moment);
+ //calculate vertical moment in kiloNewton * meters
+ moment_arm = Math.abs(target.regX - localPt.x) / conversion;
+ moment = xForce * moment_arm;
+ momentTotal += moment;
+ //alert(moment);
+ 
+ } //end for
+ 
+ 
+ if(Math.abs(momentTotal) < 1){ //value is extremely small
+ momentTotal = 0;
+ }
+ 
+ forceSummary.moment = momentTotal; //store value
+ //alert(forceSummary.moment);
+ }
+ */
+
+
+/*
+ function sumForces2(target){ //alert("sumForces()");
+ 
+ var i, xTotal, yTotal, xForce, yForce;
+ 
+ 
+ xTotal = yTotal = 0;
+ 
+ for(i = 0; i < target.forces.length; i++){
+ 
+ current = target.forces[i];
+ 
+ //x component
+ xForce = getXComponent(current);
+ xTotal += xForce;
+ 
+ //y component
+ yForce = getYComponent(current);
+ yTotal += yForce;
+ 
+ alert("xForce: " + xForce + ", yForce: " + yForce);
+ }
+ 
+ 
+ if(Math.abs(xTotal) < 1){ //value is extremely small
+ xTotal = 0;
+ }
+ if(Math.abs(yTotal) < 1){ //value is extremely small
+ yTotal = 0;
+ }
+ 
+ forceSummary.xComponent = xTotal;  //store value
+ forceSummary.yComponent = yTotal;  //store value
+ //alert(forceSummary.xComponent + "," + forceSummary.yComponent);
+ }
+ */
 

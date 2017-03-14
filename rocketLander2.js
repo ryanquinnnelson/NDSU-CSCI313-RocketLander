@@ -1,4 +1,4 @@
-var stage, queue, rocket_sheet, fire_sheet;
+var stage, queue, rocket_sheet, fire_sheet, thruster_sheet;
 var rocket;
 var forceSummary, resultant;
 var fsText;
@@ -14,7 +14,8 @@ function init(){
     queue.addEventListener("complete", load);
     queue.loadManifest([
         {id: "falcon9", src: "Assets/Falcon9.png"},
-        {id: "falcon9fire", src: "Assets/Falcon9Fire.png"}
+        {id: "falcon9fire", src: "Assets/Falcon9Fire.png"},
+        {id: "falcon9thrusters", src: "Assets/Falcon9Thrusters2.png"}
     ]);
 }
 
@@ -22,7 +23,7 @@ function load(){
     stage = new createjs.Stage("canvas");
     
     buildSpriteSheets();
-    buildRocket(400,400,-45);
+    buildRocket(400,400,25);
     buildRect(0,0,400,300,"red");
     
     createjs.Ticker.framerate = 60;
@@ -287,6 +288,7 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     buildBody();
     buildLegs();
     buildFire();
+    buildThrusters();
     displayCenterOfMass(rocket, "red", 10);
     
     //add to stage
@@ -339,6 +341,33 @@ function buildFire(){//alert("buildFire()");
     
     //add to container behind other children
     rocket.addChildAt(fire,0);
+}
+
+function buildThrusters(){ //alert("buildThrusters()");
+    var thrusterL, thrusterR;
+    
+    //Sprite
+    thrusterL = new createjs.Sprite(thruster_sheet, "thrust");
+    
+    //properties
+    thrusterL.y = 60;
+    thrusterL.x = -10;
+    thrusterL.name = "thrusterL";
+    thrusterL.rotation = 90;
+    
+    
+    //Sprite
+    thrusterR = new createjs.Sprite(thruster_sheet, "thrust");
+    
+    //properties
+    thrusterR.y = 110;
+    thrusterR.x = 10;
+    thrusterR.name = "thrusterR";
+    thrusterR.rotation = -90;
+    
+    //add to container behind other children
+    rocket.addChildAt(thrusterL,thrusterR,0);
+    
 }
 
 //=================================================================================//
@@ -477,6 +506,22 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
     }; //end data
     
     fire_sheet = new createjs.SpriteSheet(data);
+    
+    //spritesheet for thruster
+    //HTML Image Object
+    image = queue.getResult("falcon9thrusters");
+    
+    //generic object
+    data = {
+        images: [image],
+        frames:{width: 50, height: 75, spacing: 0, count: 6, margin: 0},
+        animations: {
+            noThrust: 5,
+            thrust: [0,4, "thrust", 0.3]
+        } //end animations
+    }; //end data
+    
+    thruster_sheet = new createjs.SpriteSheet(data);
 }
 
 //=================================================================================//

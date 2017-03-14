@@ -10,7 +10,7 @@ const PIXELS_PER_METER = 496 / 52;  //ratio of height in pixels vs. height in me
 
 var gravity = 9.81; // m/s/s
 var initialVelocityX = 0;
-var initialVelocityY = 0;
+var initialVelocityY = -50;
 var initialVelocityA = 0;   //angular
 var initialPositionX = 400;
 var initialPositionY = 0;
@@ -46,7 +46,7 @@ function load(){
     
     //game objects
     buildSpriteSheets();
-    buildRocket(initialPositionX,initialPositionY,-90);
+    buildRocket(initialPositionX,initialPositionY,-45);
     //buildRect(0,0,575,400,"red");
     
     
@@ -111,6 +111,9 @@ function calcNextPosition(target){
     nextY = target.y - (displacement.y / PIXELS_PER_METER);
     nextAngle = target.rotation - (radiansToDegrees(displacement.angle));
     
+    if(Math.abs(nextAngle) < 0.5){
+        nextAngle = 0;
+    }
     
     target.nextX = nextX;
     target.nextY = nextY;
@@ -169,6 +172,7 @@ function calcDisplacement(e){
     //= initialRotation * sec + (0.5 * accelerations.angular * sec * sec);
 }
 
+//unnecessary
 function calcMomentum(target, e){
     //linear momentum = mass * velocity
     

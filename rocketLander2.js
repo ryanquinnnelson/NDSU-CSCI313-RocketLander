@@ -1,26 +1,38 @@
 //=================================================================================//
 //                                   Variables                                     //
 //=================================================================================//
+//CONSTANTS
+//integers represent the keycode of certain keys on the keyboard
+const W_KEY = 87;
+const S_KEY = 83;
+const ESC_KEY = 27;
+const SPACEBAR = 32;
+
 //SpaceX Falcon 9 first stage rocket data
 const DRY_MASS = 26500; //kg
 const RESIDUAL_PROPELLANT = 1000; //kg
 const MOMENT_OF_INERTIA = 3.06 * Math.pow(10,6);    //kg * m^2
+const THRUST = 1500000+845; //kN per Merlin 1D engine (added 1500000 for good visual)
+
+//game data
 const PIXELS_PER_METER = 496 / 52;  //ratio of height in pixels vs. height in meters
 
 
-var gravity = 9.81; // m/s/s
+var wKeyDown = sKeyDown = mouseDown = false;    //flags
+var gravity = 9.81; // acceleration due to gravity, in m/s/s
 var initialVelocityX = 0;
-var initialVelocityY = -50;
+var initialVelocityY = -50; //should be -90 m/s if I wanted to be accurate
 var initialVelocityA = 0;   //angular
 var initialPositionX = 400;
 var initialPositionY = 0;
 var initialRotation = 0; //radians
+var thrustLevel = 3; //0 - 4
 
 
 
 var stage, queue, rocket_sheet, fire_sheet, thruster_sheet;
 var rocket;
-var forces, accelerations, velocities, displacement, momentum;
+var forces, accelerations, velocities, displacement, momentum, engine;
 var fsText, resultant;
 
 
@@ -46,7 +58,7 @@ function load(){
     
     //game objects
     buildSpriteSheets();
-    buildRocket(initialPositionX,initialPositionY,-45);
+    buildRocket(initialPositionX,initialPositionY,0);
     //buildRect(0,0,575,400,"red");
     
     
@@ -68,6 +80,12 @@ function load(){
     //ticker
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener("tick", run);
+    
+    //listen for key / mouse events
+    window.onkeydown  = detectKey;  //listener calls detectKey() for "keydown"
+    window.onkeyup = removeKey;     //listener calls removeKey() for "keyup"
+    window.onmousedown = fireEngine;    //listener calls fireEngine() for "mousedown"
+    window.onmouseup = cutEngine;    //listener calls cutEngine() for "mouseup"
 }
 
 
@@ -86,6 +104,42 @@ function run(e){
 function pause(e){
     createjs.Ticker.paused = !createjs.Ticker.paused;
 }
+
+function detectKey(e){ //alert("detectKey()");
+    e = !e ? window.event : e; //if event is not event, get window.event;
+    switch(e.keyCode) {
+        case W_KEY:
+            wKeyDown = true;    //flag for movement
+            break;
+        case S_KEY:
+            sKeyDown = true;    //flag for movement
+            break;
+        case ESC_KEY:
+            pause(e);
+            break;
+        case SPACEBAR:
+            break;
+    }
+}
+
+function removeKey(e){ //alert("removeKey()");
+    e = !e ? window.event : e;  //if event is not event, get window.event;
+    switch(e.keyCode) {
+        case W_KEY:
+            wKeyDown = false;   //reset flat
+            break;
+        case S_KEY:
+            sKeyDown = false;   //reset flag
+            break;
+    }
+}
+
+
+
+
+
+    
+
 
 
 //=================================================================================//
@@ -111,10 +165,6 @@ function calcNextPosition(target){
     nextY = target.y - (displacement.y / PIXELS_PER_METER);
     nextAngle = target.rotation - (radiansToDegrees(displacement.angle));
     
-    if(Math.abs(nextAngle) < 0.5){
-        nextAngle = 0;
-    }
-    
     target.nextX = nextX;
     target.nextY = nextY;
     target.nextAngle = nextAngle;
@@ -123,6 +173,24 @@ function renderRocket(e){
     rocket.x = rocket.nextX;
     rocket.y = rocket.nextY;
     rocket.rotation = rocket.nextAngle;
+}
+
+//=================================================================================//
+//                                   Control                                       //
+//=================================================================================//
+
+function fireEngine(e){
+    //calculate force added to rocket
+    var t;
+    
+    t = THRUST;// * (thrustLevel/4);
+    
+    //add force to rocket
+    addForce(0,rocket.height, t, 90, rocket, "engine");   //straight up
+}
+
+function cutEngine(e){
+    rocket.removeChild(engine);
 }
 
 //=================================================================================//
@@ -201,8 +269,8 @@ function setDefaultForces(target){
     length2 = remainder/2 + target.center_of_mass; //middle of lower section
     
     //add forces to target
-    addForce(0, length1, gravity1, 270, target); //straight down
-    addForce(0, length2, gravity2, 270, target); //straight down
+    addForce(0, length1, gravity1, 270, target, "none"); //straight down
+    addForce(0, length2, gravity2, 270, target, "none"); //straight down
 }
 
 
@@ -219,7 +287,7 @@ function setDefaultForces(target){
         Note: moment arm is the perpendicular distance between the target's center of mass and the force vector acting on the target.
         Note: length of the moment arm in pixels
  */
-function addForce(x,y, magnitude, direction, target){ //alert("addForce()");
+function addForce(x,y, magnitude, direction, target, ref){ //alert("addForce()");
     
     var force;
     
@@ -238,6 +306,14 @@ function addForce(x,y, magnitude, direction, target){ //alert("addForce()");
     
     //add to container
     target.addChild(force);
+    
+    switch(ref){
+        case "engine":
+            engine = force; //save for later reference
+            break;
+        case "none":
+            break;
+    }
 }
 
 
@@ -455,7 +531,7 @@ function buildFire(){//alert("buildFire()");
     var fire;
     
     //Sprite
-    fire = new createjs.Sprite(fire_sheet, "mediumFire");
+    fire = new createjs.Sprite(fire_sheet, "noFire");
     
     //properties
     fire.y = rocket.height - 5;

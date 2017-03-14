@@ -4,19 +4,19 @@
 //SpaceX Falcon 9 first stage rocket data
 const DRY_MASS = 26500; //kg
 const RESIDUAL_PROPELLANT = 1000; //kg
-const MOMENT_OF_INERTIA = 3.06 * Math.pow(10,6);    //kg * m^3
-const PIXELS_PER_METER = 496 / 52;  //height in pixels / height in meters
+const MOMENT_OF_INERTIA = 3.06 * Math.pow(10,6);    //kg * m^2
+const PIXELS_PER_METER = 496 / 52;  //ratio of height in pixels vs. height in meters
 
 
-var gravity = 9.81; // m/s/svar gravity = 9.81; //m/s/s
+var gravity = 9.81; // m/s/s
 
 
 
 
 var stage, queue, rocket_sheet, fire_sheet, thruster_sheet;
 var rocket;
-var forceSummary, resultant;
-var fsText;
+var forces, accelerations;
+var fsText, resultant;
 
 
 
@@ -44,17 +44,22 @@ function load(){
     buildRocket(400,400,90);
     //buildRect(0,0,575,400,"red");
     
+    
+    
+    //forces
+    resetForces();
+    resetAccelerations();
+    setDefaultForces(rocket);
+
+    
+    
+    //GUI
+    displayStats("white");
+    //displayResultant(rocket, "green");
+    
     //ticker
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener("tick", run);
-    
-    //forces
-    setDefaultForces(rocket);
-    sumForces(rocket);
-    displayResultant(rocket, "green");
-    
-    //GUI
-    displayForceSummary(rocket, "white");
 }
 
 
@@ -62,14 +67,58 @@ function load(){
 //                                Game Mechanics                                   //
 //=================================================================================//
 function run(e){
+    if(!e.paused){
+        updateRocket();
+        updateStats();
+        stage.update();
+    }
+}
+
+function pause(e){
+    createjs.Ticker.paused = !createjs.Ticker.paused;
+}
+
+
+//=================================================================================//
+//                                  Movement                                       //
+//=================================================================================//
+
+function updateRocket(){
+    sumForces(rocket);
+    calcAccelerations(rocket);
+    calcNextPosition(rocket);
+}
+function calcNextPosition(target){
     
-    stage.update();
+    //get acceleration values
+    
+    
+    
+    
+    
+    
 }
 
 //=================================================================================//
-//                                      Physics                                    //
+//                                   Physics                                       //
 //=================================================================================//
 
+
+
+
+function calcAccelerations(target){
+    //linear acceleration = Force (kN) / Mass (kg)
+    accelerations.horizontal = forces.xComponent / target.mass;
+    accelerations.vertical = forces.yComponent / target.mass;
+    
+    //angular acceleration = Torque (kN * m) / Moment of Inertia (kg * m^2)
+    accelerations.angular = forces.torque / target.moment_of_inertia;
+}
+
+function getAngularAcceleration(target){
+    
+    
+}
 /*
     Adding two forces due to gravity, one acting in the upper section and the second acting in the lower section. This results in a more natural rotation if the rocket is angled, rather than if a single gravity force was acting through the center of mass (resulting in no rotation).
  
@@ -77,7 +126,7 @@ function run(e){
  */
 function setDefaultForces(target){
     
-    resetForceSummary();
+    
 
     var gravityTop, gravityBottom, ratio;
     var topDistance, bottomDistance, remainder;
@@ -134,10 +183,10 @@ function addForce(x,y, magnitude, direction, target){ //alert("addForce()");
 
 function sumForces(target){
     
-    var xTotal, yTotal, mTotal, current, xForce, yForce, xMoment, yMoment;
+    var xTotal, yTotal, tTotal, current, xForce, yForce, xTorque, yTorque;
     
     //set initial values
-    xTotal = yTotal = mTotal = 0;
+    xTotal = yTotal = tTotal = 0;
     
     for(i = 0; i < target.children.length; i++){ //for each child in target
         
@@ -158,12 +207,12 @@ function sumForces(target){
         
         //moment
         //x component
-        xMoment = calcMomentComponent(current, "x", {x: xForce, y: yForce});
-        mTotal += xMoment;
+        xTorque = calcTorqueComponent(current, "x", {x: xForce, y: yForce});
+        tTotal += xTorque;
         
         //y component
-        yMoment = calcMomentComponent(current, "y", {x: xForce, y: yForce});
-        mTotal += yMoment;
+        yTorque = calcTorqueComponent(current, "y", {x: xForce, y: yForce});
+        tTotal += yTorque;
     } //end for
     
     
@@ -174,18 +223,19 @@ function sumForces(target){
     if(Math.abs(yTotal) < 1){ //value is extremely small
         yTotal = 0;
     }
-    if(Math.abs(mTotal) < 1){ //value is extremely small
-        mTotal = 0;
+    if(Math.abs(tTotal) < 1){ //value is extremely small
+        tTotal = 0;
     }
     
     //store values
-    forceSummary.xComponent = xTotal;
-    forceSummary.yComponent = yTotal;
-    forceSummary.moment = mTotal;
+    forces.xComponent = xTotal;
+    forces.yComponent = yTotal;
+    forces.torque = tTotal;
+    //alert(forces.xComponent + "," + forces.yComponent + "," + forces.torque);
 }
 
-function calcMomentComponent(force, type, components){
-    var parent, momentArm, moment;
+function calcTorqueComponent(force, type, components){
+    var parent, momentArm, torque;
     
     //get container of force
     parent = force.parent;
@@ -201,17 +251,17 @@ function calcMomentComponent(force, type, components){
             //calculate moment arm as difference in the y's of target, child
             //convert from pixels into meters
             momentArm = (centerPt.y - forcePt.y) / PIXELS_PER_METER;
-            moment = components.x * momentArm;
+            torque = components.x * momentArm;
             break;
             
         case "y":
             //calculate moment arm as difference in the x's of target, child
             //convert from pixels into meters
             momentArm = (forcePt.x - centerPt.x) / PIXELS_PER_METER;
-            moment = components.y * momentArm;
+            torque = components.y * momentArm;
             break;
     }
-    return moment;
+    return torque;
 }
 
 
@@ -245,9 +295,13 @@ function radiansToDegrees(radians){
     return radians * 180 / Math.PI;
 }
 
-function resetForceSummary(){
+function resetForces(){
     
-    forceSummary = {xComponent: 0, yComponent: 0, moment: 0};
+    forces = {xComponent: 0, yComponent: 0, torque: 0};
+}
+function resetAccelerations(){
+    
+    accelerations = {horizontal: 0, vertical: 0, angular: 0};
 }
 
 
@@ -265,8 +319,8 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     rocket.body_width = 39;         //width in pixels of rocket body
     rocket.center_of_mass = 351;    //distance in pixels from top of rocket to C.O.M.
     rocket.height = 496;            //distance from top of rocket to bottom of engines
-    //rocket.forces = [];             //forces acting on rocket
     rocket.mass = DRY_MASS + RESIDUAL_PROPELLANT;
+    rocket.moment_of_inertia = MOMENT_OF_INERTIA;
     
     //CreateJS properties
     rocket.regY = rocket.center_of_mass;    //vertical registration point
@@ -403,8 +457,8 @@ function displayResultant(target, color){ //alert("displayResultant()");
     
     
     //convert force components (kN) into pixel lengths
-    xLength = forceSummary.xComponent / 1000;
-    yLength = forceSummary.yComponent / 1000;
+    xLength = forces.xComponent / 1000;
+    yLength = forces.yComponent / 1000;
 
     //determine x,y of target center of mass, relative to stage
     globalPt = target.localToGlobal(target.regX, target.regY);
@@ -433,18 +487,42 @@ function displayResultant(target, color){ //alert("displayResultant()");
     stage.addChild(resultant);
 }
 
-function displayForceSummary(target, color){
+function displayStats(color){
     var m;
     
-    m ="Force (x):  " + Math.round(forceSummary.xComponent)
-     + " kN\n\nForce (y):  " + Math.round(forceSummary.yComponent)
-     + " kN\n\nMoment:  " + Math.round(forceSummary.moment) + " kN*m";
+    m ="Mass: " + rocket.mass
+    + " kg\n\n------------------------------"
+    + "\n\nForce (x): " + Math.round(forces.xComponent)
+    + " kN\n\nForce (y):  " + Math.round(forces.yComponent)
+    + " kN\n\nTorque:  " + Math.round(forces.torque)
+    + " kN*m\n\n------------------------------"
+    + "\n\nAcceleration (x): " + Math.round(accelerations.horizontal)
+    + " m/s/s\n\nAcceleration (y): " + Math.round(accelerations.vertical)
+    + " m/s/s\n\nAcceleration (angular): " + Math.round(accelerations.angular)
+    + " rad/s/s";
     
-    fsText = new createjs.Text( m, "24px Arial", color);
+    fsText = new createjs.Text( m, "20px Arial", color);
     fsText.x = stage.canvas.width - 350;
     fsText.y = 50;
     
     stage.addChild(fsText);
+}
+
+function updateStats(){
+    var m;
+    
+    m ="Mass: " + rocket.mass
+    + " kg\n\n------------------------------"
+    + "\n\nForce (x): " + Math.round(forces.xComponent)
+    + " kN\n\nForce (y):  " + Math.round(forces.yComponent)
+    + " kN\n\nTorque:  " + Math.round(forces.torque)
+    + " kN*m\n\n------------------------------"
+    + "\n\nAcceleration (x): " + Math.round(accelerations.horizontal)
+    + " m/s/s\n\nAcceleration (y): " + Math.round(accelerations.vertical)
+    + " m/s/s\n\nAcceleration (angular): " + Math.round(accelerations.angular)
+    + " rad/s/s";
+    
+    fsText.text = m;
 }
 
 //=================================================================================//
@@ -532,144 +610,4 @@ function buildRect(x, y, width, height, color){
     stage.addChild(rect);
     stage.update();
 }
-
-
-
-/*
- Method takes each force currently acting on target and calculates a total moment in kiloNewton * meters.
- 
- For each force acting on the target:
- -   Determine the direction of the force in standard geometric convention (SGC), relative to the target
- (i.e. if the target is pointing 90 degrees SGC and is acted on by a force with a direction of 180 degrees SGC, the direction of the force relative to the target is 180 degrees SGC.
- 
- If the target is pointing 135 degrees SGC, and is acted on by a force with a direction of 225 degrees SGC, the direction of the force relative to the target is 180 degrees SGC.
- 
- If the target is pointing 45 degrees SGC, and is acted on by a force with a direction of 225 degrees SGC, the direction of the force relative to the target is 270 degrees SGC.
- 
- -   Determine the x,y point the force acts at, relative to target coordinate system
- 
- -   Break the force into horizontal and vertical components
- 
- -   Calculate the moment arm for each component
- 
- -   Calculate the moment for each component and add to the total
- 
- Once all individual forces have been processed, save the resulting total moment.
- 
- Note:
- Negative moment indicates counterclockwise torque.
- 
- Standard geometric convention (SGC) for angle:
- -  0 degrees is horizontal
- -  degrees increase in counterclockwise direction
- 
- CreateJS convention (CJS) for rotation angle:
- -  0 degrees is vertical
- -  degrees increase in clockwise direction
- */
-/*
- function sumMoments(target){
- 
- var conversion, momentTotal, i, current;
- var relativeDirection, radians, localPt, xForce, yForce, moment_arm, moment;
- var reverse, targetPt, forcePt;
- 
- //get number of pixels per meter based on image
- conversion = target.height / 52;    //actual first stage is 52.00 m tall
- 
- 
- //get target center of mass, relative to stage
- targetPt = target.localToGlobal(target.regX, target.regY);
- 
- 
- //set starting value
- momentTotal = 0;
- 
- for(i = 0; i < target.children.length; i++){  //for each child in container
- 
- current = target.children[i];
- //alert(current);
- 
- if(current.name !== "force"){
- continue;
- }
- 
- forcePt = current.localToGlobal(current.regX,current.regY);
- 
- 
- //determine direction of force, relative to target coordinate system
- relativeDirection = current.direction + target.rotation;
- radians = degreesToRadians(relativeDirection);
- //alert(radiansToDegrees(radians));
- 
- //determine force x,y relative to target coordinate system
- localPt = target.globalToLocal(current.x, current.y);
- 
- //determine x- and y-component forces relative to this new direction
- reverse = target.rotation < 0  ? 1 : -1;
- //alert(target.rotation);
- xForce = Math.sin(radians) * current.magnitude * reverse;
- yForce = Math.cos(radians) * current.magnitude;
- //alert(xForce + "," + yForce);
- 
- //calculate horizontal moment in kiloNewton * meters
- moment_arm = Math.abs(target.regY - localPt.y) / conversion;
- moment = yForce * moment_arm;
- momentTotal += moment;
- //alert(moment);
- //calculate vertical moment in kiloNewton * meters
- moment_arm = Math.abs(target.regX - localPt.x) / conversion;
- moment = xForce * moment_arm;
- momentTotal += moment;
- //alert(moment);
- 
- } //end for
- 
- 
- if(Math.abs(momentTotal) < 1){ //value is extremely small
- momentTotal = 0;
- }
- 
- forceSummary.moment = momentTotal; //store value
- //alert(forceSummary.moment);
- }
- */
-
-
-/*
- function sumForces2(target){ //alert("sumForces()");
- 
- var i, xTotal, yTotal, xForce, yForce;
- 
- 
- xTotal = yTotal = 0;
- 
- for(i = 0; i < target.forces.length; i++){
- 
- current = target.forces[i];
- 
- //x component
- xForce = getXComponent(current);
- xTotal += xForce;
- 
- //y component
- yForce = getYComponent(current);
- yTotal += yForce;
- 
- alert("xForce: " + xForce + ", yForce: " + yForce);
- }
- 
- 
- if(Math.abs(xTotal) < 1){ //value is extremely small
- xTotal = 0;
- }
- if(Math.abs(yTotal) < 1){ //value is extremely small
- yTotal = 0;
- }
- 
- forceSummary.xComponent = xTotal;  //store value
- forceSummary.yComponent = yTotal;  //store value
- //alert(forceSummary.xComponent + "," + forceSummary.yComponent);
- }
- */
 

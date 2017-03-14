@@ -23,8 +23,8 @@ function load(){
     stage = new createjs.Stage("canvas");
     
     buildSpriteSheets();
-    buildRocket(400,400,25);
-    buildRect(0,0,400,300,"red");
+    buildRocket(400,400,90);
+    buildRect(0,0,575,400,"red");
     
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener("tick", run);
@@ -75,8 +75,8 @@ function setDefaultForces(target){
     //alert(length2);
     
     //add forces to target
-    addForce(target.x, length1, gravity1, 270, target); //straight down
-    addForce(target.x, length2, gravity2, 270, target); //straight down
+    addForce(0, length1, gravity1, 270, target); //straight down
+    addForce(0, length2, gravity2, 270, target); //straight down
 }
 
 function getResultant(target){ //alert("getResultant()");
@@ -103,13 +103,26 @@ function addForce(x,y, magnitude, direction, target){ //alert("addForce()");
     var force;
     
     //generic object
-    force = {x: x, y:y, magnitude: magnitude, direction: direction};
+    force = new createjs.Shape();
     
-    target.forces.push(force);
+    //createjs properties
+    force.x = x;
+    force.y = y;
+    force.name = "force";
+    
+    //dynamically injected properties
+    force.magnitude = magnitude;
+    force.direction = direction;
+    
+    force.graphics.beginFill("blue").drawCircle(0,0,2);
+    
+    //add to container
+    target.addChild(force);
+    target.forces.push(force);  //add to array for processing
 }
 
 
-function sumForces(target){ //alert("sumForces()");
+function sumForces2(target){ //alert("sumForces()");
  
     var i, xTotal, yTotal, xForce, yForce;
     
@@ -128,7 +141,7 @@ function sumForces(target){ //alert("sumForces()");
         yForce = getYComponent(current);
         yTotal += yForce;
         
-        //alert("xForce: " + xForce + ", yForce: " + yForce);
+        alert("xForce: " + xForce + ", yForce: " + yForce);
     }
     
 
@@ -144,8 +157,46 @@ function sumForces(target){ //alert("sumForces()");
     //alert(forceSummary.xComponent + "," + forceSummary.yComponent);
 }
 
+function sumForces(target){
+    var i, xTotal, yTotal, xForce, yForce;
+    
+    
+    xTotal = yTotal = momentTotal = 0;
+    
+    for(i = 0; i < target.children.length; i++){ //for each child in target
+        
+        current = target.children[i];
+        
+        if(current.name !== "force"){
+            continue;
+        }
+        
+        //x component
+        xForce = getXComponent(current);
+        xTotal += xForce;
+        
+        //y component
+        yForce = getYComponent(current);
+        yTotal += yForce;
+        
+        //alert("xForce: " + xForce + ", yForce: " + yForce);
+    }
+    
+    
+    if(Math.abs(xTotal) < 1){ //value is extremely small
+        xTotal = 0;
+    }
+    if(Math.abs(yTotal) < 1){ //value is extremely small
+        yTotal = 0;
+    }
+    
+    forceSummary.xComponent = xTotal;  //store value
+    forceSummary.yComponent = yTotal;  //store value
+    //alert(forceSummary.xComponent + "," + forceSummary.yComponent);
+}
+
 /*
-    Method takes each force currently acting on target and calculates a total moment in kiloNewton * meters.
+ Method takes each force currently acting on target and calculates a total moment in kiloNewton * meters.
  
     For each force acting on the target:
     -   Determine the direction of the force in standard geometric convention (SGC), relative to the target
@@ -180,38 +231,76 @@ function sumMoments(target){
     
     var conversion, momentTotal, i, current;
     var relativeDirection, radians, localPt, xForce, yForce, moment_arm, moment;
+    var reverse, targetPt, forcePt;
 
     //get number of pixels per meter based on image
     conversion = target.height / 52;    //actual first stage is 52.00 m tall
     
+    
+    //get target center of mass, relative to stage
+    targetPt = target.localToGlobal(target.regX, target.regY);
+    
+    
     //set starting value
     momentTotal = 0;
     
-    for(i = 0; i < target.forces.length; i++){  //for each force in array
+    for(i = 0; i < target.children.length; i++){  //for each child in container
         
-        current = target.forces[i];
+        current = target.children[i];
+        //alert(current);
+        
+        if(current.name !== "force"){
+            continue;
+        }
+
+        forcePt = current.localToGlobal(current.regX,current.regY);
+
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /*
         //determine direction of force, relative to target coordinate system
         relativeDirection = current.direction + target.rotation;
         radians = degreesToRadians(relativeDirection);
+        //alert(radiansToDegrees(radians));
         
         //determine force x,y relative to target coordinate system
         localPt = target.globalToLocal(current.x, current.y);
         
         //determine x- and y-component forces relative to this new direction
-        xForce = Math.sin(radians) * current.magnitude;
+        reverse = target.rotation < 0  ? 1 : -1;
+        //alert(target.rotation);
+        xForce = Math.sin(radians) * current.magnitude * reverse;
         yForce = Math.cos(radians) * current.magnitude;
+        //alert(xForce + "," + yForce);
 
         //calculate horizontal moment in kiloNewton * meters
         moment_arm = Math.abs(target.regY - localPt.y) / conversion;
         moment = yForce * moment_arm;
         momentTotal += moment;
-
+        //alert(moment);
         //calculate vertical moment in kiloNewton * meters
         moment_arm = Math.abs(target.regX - localPt.x) / conversion;
         moment = xForce * moment_arm;
         momentTotal += moment;
+        //alert(moment);
+         */
     } //end for
     
     

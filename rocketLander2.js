@@ -26,10 +26,10 @@ var thrustLevel = 0; //0 - 4
 
 
 var stage, queue, rocket_sheet, fire_sheet, thruster_sheet;
-var rocket;
-var pauseText, stats;
+var rocket, landingSite;
+var pauseText, winText, stats;
 var velocityX = 0;
-var velocityY = 0;
+var velocityY = 10;
 var direction = 0;
 
 
@@ -54,10 +54,18 @@ function load(){
     
     //game objects
     buildSpriteSheets();
-    buildRocket(400,400,direction);
+    buildGame();
+}
+
+
+
+function buildGame(){
+    placeRocket();
+    buildLandingSite(300);
     buildPauseText("yellow");
+    buildWinText("yellow");
     buildStats("white");
-    //buildRect(0,0,575,400,"red");
+    buildRect(0,0,575,stage.canvas.height-50,"red");
     
     //ticker
     createjs.Ticker.framerate = 60;
@@ -66,7 +74,22 @@ function load(){
     //listen for key / mouse events
     window.onkeydown  = detectKey;  //listener calls detectKey() for "keydown"
     window.onkeyup = removeKey;     //listener calls removeKey() for "keyup"
+    
+    
 }
+
+function placeRocket(){
+    //window.clearTimeout(placeRocket);   //if timeout was used to trigger this method
+    velocityX = 0;
+    velocityY = 10;
+    
+    var randomX = Math.floor(Math.random() * stage.canvas.width/2);
+    var randomDirection = Math.floor(Math.random() * 10);
+    
+    buildRocket(randomX + stage.canvas.width/4,-100,randomDirection);
+}
+
+
 
 
 //=================================================================================//
@@ -90,16 +113,10 @@ function detectKey(e){ //alert("detectKey()");
             dKeyDown = true;    //flag for movement
             break;
         case UP_ARROW:
-            if(thrustLevel < 4){
-                thrustLevel++;
-                thrustChanged = true;
-            }
+            increaseThrust();
             break;
         case DOWN_ARROW:
-            if(thrustLevel > 0){
-                thrustLevel--;
-                thrustChanged = true;
-            }
+            decreaseThrust();
             break;
         case ESC_KEY:
             break;
@@ -135,14 +152,16 @@ function removeKey(e){ //alert("removeKey()");
 function run(e){
     if(!e.paused){
         
-        
-        
+        //rocket
         updateRocket();
-        updateAnimations();
         renderRocket();
         
+        //animations
+        updateAnimations();
         
+        //GUI
         updateStats();
+        
         stage.update();
     }
 }
@@ -153,18 +172,101 @@ function pause(e){
     stage.update();
 }
 
+function gameOver(type){
+    
+    switch(type){
+        case 0:
+            resetGame();
+            break;
+        case 1:
+            winText.alpha = 1;
+            resetGame();
+            break;
+    }
+}
 
+function resetGame(){
+    
+    var time, futureTime;
+    
+    if(stage.contains(rocket)){
+
+        stage.removeChild(rocket);
+        createjs.Tween.get(winText).to({alpha: 0}, 2000).call(placeRocket);
+    }
+}
 
 
 //=================================================================================//
 //                                  Movement                                       //
 //=================================================================================//
 
+function increaseThrust(){
+    if(thrustLevel < 4){
+        thrustLevel++;
+        thrustChanged = true;
+    }
+}
+
+function decreaseThrust(){
+    if(thrustLevel > 0){
+        thrustLevel--;
+        thrustChanged = true;
+    }
+}
+
 function updateRocket(){
     
+    var nextPt;
     
+    //determine next position
+    nextPt = calcNextPosition();
+    
+    //check for collision
+    detectCollision(nextPt);
+    
+    //store values
+    rocket.nextY = nextPt.y;
+    rocket.nextX = nextPt.x;
+}
+
+
+
+function detectCollision(pt){
+    
+    var remainderY, remainderX, correctOrientation, correctSpeed, correctXRange, correctYRange, properLanding;
+    
+    //for use in calculations
+    remainderY = rocket.landingHeight - rocket.center_of_mass;
+    remainderX = rocket.landing_width/2;
+    
+    //checklist
+    correctOrientation = Math.abs(rocket.rotation) < 5;
+    correctSpeed = Math.abs(velocityY) < 2;
+    correctXRange = (rocket.x - remainderX >= landingSite.x)
+                 && (rocket.x + remainderX <= landingSite.x + landingSite.width);
+    correctYRange = (pt.y >= landingSite.y - remainderY);
+    
+    properLanding = correctYRange && correctXRange && correctOrientation && correctSpeed;
+    
+    
+    if(properLanding){
+        pt.y = landingSite.y - remainderY;
+        gameOver(1);
+    }
+    else if(correctYRange){
+        //react based on what was hit
+        gameOver(0);
+    }
+}
+
+
+
+function calcNextPosition(){
     var nextX, nextY, angle, yThrust, xThrust;
     nextX = rocket.x;
+    
+    yThrust = xThrust = 0;
     
     if(wKeyDown){
         
@@ -172,16 +274,10 @@ function updateRocket(){
         xThrust = getXThrust(angle);
         nextX += xThrust;
         velocityX = xThrust;
-        //alert(velocityX);
     }
     else{
         nextX += velocityX;
     }
-
-    
-    
-    
-    
     
     
     //calculate next y position
@@ -191,20 +287,32 @@ function updateRocket(){
         
         angle = getStandardAngle(rocket.rotation);
         yThrust = getYThrust(angle);
-        nextY -= yThrust - gravity;
-        velocityY++;
+        
+        velocityY -= yThrust/200;
+        
+        nextY += velocityY;
+        
     }
     else if(!wKeyDown){
-        nextY += gravity;
-        velocityY--;
+        nextY += velocityY;
+        velocityY += 0.2;
     }
+    //velocityY = (yThrust - gravity);
     
     
+    return new createjs.Point(nextX, nextY);
+}
+
+
+
+
+function renderRocket(){
     
+    //position
+    rocket.y = rocket.nextY;
+    rocket.x = rocket.nextX;
     
-    //calculate next angle
-    nextAngle = rocket.rotation;
-    //alert(nextAngle);
+    //rotation
     if(aKeyDown){
         rocket.rotation += 1;
     }
@@ -212,18 +320,6 @@ function updateRocket(){
         rocket.rotation -= 1;
     }
     
-
-    rocket.nextY = nextY;
-    rocket.nextX = nextX;
-}
-
-
-
-
-function renderRocket(){
-    rocket.y = rocket.nextY;
-    rocket.x = rocket.nextX;
-
 }
 
 //convert CreateJS default to standard geometric convention
@@ -250,14 +346,6 @@ function radiansToDegrees(radians){
 }
 
 
-
-//=================================================================================//
-//                                   Control                                       //
-//=================================================================================//
-
-
-
-
 //=================================================================================//
 //                                   Game Objects                                  //
 //=================================================================================//
@@ -272,6 +360,7 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     rocket.body_width = 39;         //width in pixels of rocket body
     rocket.center_of_mass = 351;    //distance in pixels from top of rocket to C.O.M.
     rocket.height = 496;            //distance from top of rocket to bottom of engines
+    rocket.landingHeight = 529;     //distance from top to bottom of landing legs
     rocket.nextX = 0;
     rocket.nextY = 0;
     rocket.nextAngle = 0;
@@ -392,6 +481,18 @@ function buildCenterOfMass(target, color, radius){
     target.addChild(com);
 }
 
+function buildLandingSite(x){
+    landingSite = new createjs.Shape();
+    
+    //createjs properties
+    landingSite.graphics.beginFill("green").drawRect(0, 0, 300,10);
+    landingSite.x = x;
+    landingSite.y = stage.canvas.height - 50;
+    landingSite.width = 300;
+    
+    stage.addChild(landingSite);
+}
+
 //=================================================================================//
 //                                       GUI                                       //
 //=================================================================================//
@@ -404,6 +505,16 @@ function buildPauseText(color){
     pauseText.visible = false;
     
     stage.addChild(pauseText);
+}
+
+function buildWinText(color){
+    winText = new createjs.Text("Landed!", "80px Arial", color);
+    winText.textAlign = "center";
+    winText.x = stage.canvas.width/2;
+    winText.y = stage.canvas.height/2;
+    winText.alpha = 0;
+    
+    stage.addChild(winText);
 }
 
 function buildStats(color){

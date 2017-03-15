@@ -13,7 +13,7 @@ const SPACEBAR = 32;
 
 var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;    //flags
 var gravity = 9.81; // acceleration due to gravity
-var thrustLevel = 0; //0 - 4
+var thrustLevel = 4; //0 - 4
 
 
 
@@ -79,7 +79,6 @@ function detectKey(e){ //alert("detectKey()");
             break;
         case D_KEY:
             dKeyDown = true;    //flag for movement
-            rocket.getChildByName("thrusterR").gotoAndPlay("thrust");
             break;
         case ESC_KEY:
             pause(e);
@@ -99,10 +98,10 @@ function removeKey(e){ //alert("removeKey()");
             sKeyDown = false;   //reset flag
             break;
         case A_KEY:
-            aKeyDown = true;    //flag for movement
+            aKeyDown = false;    //flag for movement
             break;
         case D_KEY:
-            dKeyDown = true;    //flag for movement
+            dKeyDown = false;    //flag for movement
             break;
     }
 }
@@ -123,6 +122,7 @@ function cutEngine(e){
 function run(e){
     if(!e.paused){
         updateRocket();
+        updateAnimations();
         renderRocket();
         stage.update();
     }
@@ -146,24 +146,97 @@ function pause(e){
 
 function updateRocket(){
     
+    
 }
 
 function renderRocket(){
-    checkAnimations();
+    
 }
 
-function checkAnimations(){
+function updateAnimations(){
     
-    var isThrusting;
+    var isThrustingL, isThrustingR, engineFiring, child;
     
+    //flags
     isThrustingL = rocket.getChildByName("thrusterL").currentAnimation === "thrust";
     isThrustingR = rocket.getChildByName("thrusterR").currentAnimation === "thrust";
     
+    
+    //flag for engine firing
+    child = rocket.getChildByName("fire");
+    engineFiring = child.currentAnimation === "tinyFire" ||
+                   child.currentAnimation === "smallFire" ||
+                   child.currentAnimation === "mediumFire" ||
+                   child.currentAnimation === "largeFire";
+
+    
+    
+    
+    //left thruster
     if(aKeyDown && !isThrustingL){
        rocket.getChildByName("thrusterL").gotoAndPlay("thrust");
     }
+    if(!aKeyDown && isThrustingL){
+        rocket.getChildByName("thrusterL").gotoAndPlay("noThrust");
+    }
+    
+    //right thruster
     if(dKeyDown && !isThrustingR){
         rocket.getChildByName("thrusterR").gotoAndPlay("thrust");
+    }
+    if(!dKeyDown && isThrustingR){
+        rocket.getChildByName("thrusterR").gotoAndPlay("noThrust");
+    }
+    
+    //engine
+    if(wKeyDown && !engineFiring){
+        engineFiring = true;
+        child = rocket.getChildByName("fire");
+        
+        switch(thrustLevel){
+            case 0:
+                child.gotoAndPlay("noFire");
+                break;
+            case 1:
+                child.gotoAndPlay("tinyFire");
+                break;
+            case 2:
+                child.gotoAndPlay("smallFire");
+                break;
+            case 3:
+                child.gotoAndPlay("mediumFire");
+                break;
+            case 4:
+                child.gotoAndPlay("largeFire");
+                break;
+        }
+    }
+    if(!wKeyDown && engineFiring){
+        engineFiring = false;
+    
+        child = rocket.getChildByName("fire");
+        
+        
+        switch(thrustLevel){
+            case 0:
+                child.gotoAndPlay("noFire");
+                break;
+            case 1:
+                child.gotoAndPlay("cutTinyFire");
+                break;
+            case 2:
+                child.gotoAndPlay("cutSmallFire");
+                break;
+            case 3:
+                child.gotoAndPlay("cutMediumFire");
+                break;
+            case 4:
+                child.gotoAndPlay("cutLargeFire");
+                //alert("test");
+                break;
+        }
+         
+        
     }
 }
 
@@ -369,10 +442,18 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
         frames:{width: 50, height: 364, spacing: 0, count: 21, margin: 0},
         animations: {
             noFire: 20,
+            
+            //animations for engine firing continuously
             tinyFire: [15,19, "tinyFire", 0.3],
             smallFire: [0,4, "smallFire", 0.3],
             mediumFire: [5,9, "mediumFire", 0.3],
-            largeFire: [10,14, "largeFire", 0.3]
+            largeFire: [10,14, "largeFire", 0.3],
+            
+            //animations for engine cutout
+            cutTinyFire: [15,19, "noFire", 1.5],
+            cutSmallFire: [0,4, "cutTinyFire", 1.5],
+            cutMediumFire: [5,9, "cutSmallFire", 1.5],
+            cutLargeFire: [10,14, "cutMediumFire", 1.5]
         } //end animations
     }; //end data
     

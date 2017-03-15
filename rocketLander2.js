@@ -7,18 +7,21 @@ const W_KEY = 87;
 const A_KEY = 65;
 const D_KEY = 68;
 const S_KEY = 83;
+const UP_ARROW = 38;
+const DOWN_ARROW = 40;
 const ESC_KEY = 27;
 const SPACEBAR = 32;
 
 
 const MASS = 27500; //kg
-const THRUST = 10;  //kN
+const THRUST = 35;  //kN
 const PIXELS_PER_METER = 496 / 52;  //pixel image vs. actual rocket at 52.00 m tall
 
 
 var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;    //flags
+var thrustChanged = false;
 var gravity = 9.81; // acceleration due to gravity
-var thrustLevel = 4; //0 - 4
+var thrustLevel = 0; //0 - 4
 
 
 
@@ -86,10 +89,22 @@ function detectKey(e){ //alert("detectKey()");
         case D_KEY:
             dKeyDown = true;    //flag for movement
             break;
+        case UP_ARROW:
+            if(thrustLevel < 4){
+                thrustLevel++;
+                thrustChanged = true;
+            }
+            break;
+        case DOWN_ARROW:
+            if(thrustLevel > 0){
+                thrustLevel--;
+                thrustChanged = true;
+            }
+            break;
         case ESC_KEY:
-            pause(e);
             break;
         case SPACEBAR:
+            pause(e);
             break;
     }
 }
@@ -176,7 +191,7 @@ function updateRocket(){
         
         angle = getStandardAngle(rocket.rotation);
         yThrust = getYThrust(angle);
-        nextY -= yThrust;
+        nextY -= yThrust - gravity;
         velocityY++;
     }
     else if(!wKeyDown){
@@ -191,10 +206,10 @@ function updateRocket(){
     nextAngle = rocket.rotation;
     //alert(nextAngle);
     if(aKeyDown){
-        rocket.rotation -= 1;
+        rocket.rotation += 1;
     }
     if(dKeyDown){
-        rocket.rotation += 1;
+        rocket.rotation -= 1;
     }
     
 
@@ -398,7 +413,8 @@ function buildStats(color){
     + "Velocity (x): " + velocityX.toFixed(2) + " m/s\n\n"
     + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n"
     + "Rotation: " + rocket.rotation + " degrees\n\n"
-    + "NextY: " + rocket.nextY + " px\n\n";
+    + "NextY: " + rocket.nextY + " px\n\n"
+    + "Thrust Level: " + thrustLevel + "\n\n";
     
     stats = new createjs.Text(m, "24px Arial", color);
     stats.x = stage.canvas.width - 300;
@@ -412,7 +428,8 @@ function updateStats(){
     + "Velocity (x): " + velocityX.toFixed(2) + " m/s\n\n"
     + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n"
     + "Rotation: " + rocket.rotation + " degrees\n\n"
-    + "NextY: " + rocket.nextY + " px\n\n";
+    + "NextY: " + rocket.nextY + " px\n\n"
+    + "Thrust Level: " + thrustLevel + "\n\n";
 }
 
 
@@ -429,23 +446,23 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
     
     //generic object
     data = {
-    images: [image],
-    frames:{width: 184, height: 861, spacing: 0, count: 27, margin: 0},
-    animations: {
-    closedFins: 0,
-    deployFins: [0, 2, "deployedFins", 0.1],    //start, end, [next], [speed]
-    deployedFins: 2,
-    closeFins: {
-    frames: [2,1,0],
-    next: "closedFins",
-    speed: 0.1
-    },
-    finsLeft: 3,
-    finsRight: 5,
-    closedLegs: 6,
-    deployLegs: [6,10, "deployedLegs", 0.1],
-    deployedLegs: 10,
-    } //end animations
+        images: [image],
+        frames:{width: 184, height: 861, spacing: 0, count: 27, margin: 0},
+        animations: {
+            closedFins: 0,
+            deployFins: [0, 2, "deployedFins", 0.1],    //start, end, [next], [speed]
+            deployedFins: 2,
+            closeFins: {
+                frames: [2,1,0],
+                next: "closedFins",
+                speed: 0.1
+            },
+            finsLeft: 3,
+            finsRight: 5,
+            closedLegs: 6,
+            deployLegs: [6,10, "deployedLegs", 0.1],
+            deployedLegs: 10,
+        } //end animations
     }; //end data
     
     rocket_sheet = new createjs.SpriteSheet(data);
@@ -457,23 +474,23 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
     
     //generic object
     data = {
-    images: [image],
-    frames:{width: 50, height: 364, spacing: 0, count: 21, margin: 0},
-    animations: {
-    noFire: 20,
-        
-        //animations for engine firing continuously
-    tinyFire: [15,19, "tinyFire", 0.3],
-    smallFire: [0,4, "smallFire", 0.3],
-    mediumFire: [5,9, "mediumFire", 0.3],
-    largeFire: [10,14, "largeFire", 0.3],
-        
-        //animations for engine cutout
-    cutTinyFire: [15,19, "noFire", 1.5],
-    cutSmallFire: [0,4, "cutTinyFire", 1.5],
-    cutMediumFire: [5,9, "cutSmallFire", 1.5],
-    cutLargeFire: [10,14, "cutMediumFire", 1.5]
-    } //end animations
+        images: [image],
+        frames:{width: 50, height: 364, spacing: 0, count: 21, margin: 0},
+        animations: {
+            noFire: 20,
+                
+                //animations for engine firing continuously
+            tinyFire: [15,19, "tinyFire", 0.3],
+            smallFire: [0,4, "smallFire", 0.3],
+            mediumFire: [5,9, "mediumFire", 0.3],
+            largeFire: [10,14, "largeFire", 0.3],
+                
+                //animations for engine cutout
+            cutTinyFire: [15,19, "noFire", 1.5],
+            cutSmallFire: [0,4, "cutTinyFire", 1.5],
+            cutMediumFire: [5,9, "cutSmallFire", 1.5],
+            cutLargeFire: [10,14, "cutMediumFire", 1.5]
+        } //end animations
     }; //end data
     
     fire_sheet = new createjs.SpriteSheet(data);
@@ -484,35 +501,23 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
     
     //generic object
     data = {
-    images: [image],
-    frames:{width: 50, height: 75, spacing: 0, count: 6, margin: 0},
-    animations: {
-    noThrust: 5,
-    thrust: [0,4, "thrust", 0.3]
-    } //end animations
+        images: [image],
+        frames:{width: 50, height: 75, spacing: 0, count: 6, margin: 0},
+        animations: {
+            noThrust: 5,
+            thrust: [0,4, "thrust", 0.3]
+        } //end animations
     }; //end data
     
     thruster_sheet = new createjs.SpriteSheet(data);
 }
 
-function updateAnimations(){
-    
-    var isThrustingL, isThrustingR, engineFiring, child;
+function updateThrusters(){
+    var isThrustingL, isThrustingR;
     
     //flags
     isThrustingL = rocket.getChildByName("thrusterL").currentAnimation === "thrust";
     isThrustingR = rocket.getChildByName("thrusterR").currentAnimation === "thrust";
-    
-    
-    //flag for engine firing
-    child = rocket.getChildByName("fire");
-    engineFiring = child.currentAnimation === "tinyFire" ||
-    child.currentAnimation === "smallFire" ||
-    child.currentAnimation === "mediumFire" ||
-    child.currentAnimation === "largeFire";
-    
-    
-    
     
     //left thruster
     if(aKeyDown && !isThrustingL){
@@ -529,10 +534,25 @@ function updateAnimations(){
     if(!dKeyDown && isThrustingR){
         rocket.getChildByName("thrusterR").gotoAndPlay("noThrust");
     }
+}
+
+
+function updateEngine(){
+    var engineFiring, child;
     
+    //flag for engine firing
+    child = rocket.getChildByName("fire");
+    
+    
+    engineFiring =  child.currentAnimation === "tinyFire" ||
+                    child.currentAnimation === "smallFire" ||
+                    child.currentAnimation === "mediumFire" ||
+                    child.currentAnimation === "largeFire";
+
     //engine
     if(wKeyDown && !engineFiring){
         engineFiring = true;
+        thrustChanged = false;
         child = rocket.getChildByName("fire");
         
         switch(thrustLevel){
@@ -551,9 +571,32 @@ function updateAnimations(){
             case 4:
                 child.gotoAndPlay("largeFire");
                 break;
-        }
-    }
-    if(!wKeyDown && engineFiring){
+        } //end switch
+    } //end if
+    else if(wKeyDown && thrustChanged){
+        engineFiring = true;
+        thrustChanged = false;
+        child = rocket.getChildByName("fire");
+        
+        switch(thrustLevel){
+            case 0:
+                child.gotoAndPlay("noFire");
+                break;
+            case 1:
+                child.gotoAndPlay("tinyFire");
+                break;
+            case 2:
+                child.gotoAndPlay("smallFire");
+                break;
+            case 3:
+                child.gotoAndPlay("mediumFire");
+                break;
+            case 4:
+                child.gotoAndPlay("largeFire");
+                break;
+        } //end switch
+    } //end if
+    else if(!wKeyDown && engineFiring){
         engineFiring = false;
         
         child = rocket.getChildByName("fire");
@@ -576,10 +619,15 @@ function updateAnimations(){
                 child.gotoAndPlay("cutLargeFire");
                 //alert("test");
                 break;
-        }
-        
-        
-    }
+        } //end switch
+    } //end if
+}
+
+function updateAnimations(){
+    
+    updateThrusters();
+    updateEngine();
+    
 }
 
 //=================================================================================//
@@ -597,54 +645,6 @@ function buildRect(x, y, width, height, color){
     stage.update();
 }
 
-//=================================================================================//
-//                                   Physics                                       //
-//=================================================================================//
-/*
-function sumForces(e){
-    var xTotal, yTotal;
-    
-    
-    //vertical
-    //gravity
-    yTotal += (gravity * MASS * -1);
-    
-    //engine
-    if(wKeyDown){
-        sum += THRUST * (thrustLevel/4) * Math.cos();
-    }
-    
-    return sum;
-}
 
-function calcAcceleration(){
-    
-}
-
-
-function calcVelocity(e){
-    velocityX = 0;
-    velocityY = velocityY  - gravity * (1/createjs.Ticker.framerate);
-    
-}
-
-function calcForceComponent(magnitude,type){
-    
-    var radians, component;
-    
-    radians = degreesToRadians(force.direction);
-    
-    switch(type){
-        case "x":
-            component = Math.cos(radians) * magnitude;
-            break;
-        case "y":
-            component = Math.sin(radians) * magnitude;
-            break;
-    }
-    
-    return component;
-}
-*/
 
 

@@ -12,21 +12,21 @@ const SPACEBAR = 32;
 
 
 const MASS = 27500; //kg
-const THRUST = 2000000;  //kN
+const THRUST = 10;  //kN
 const PIXELS_PER_METER = 496 / 52;  //pixel image vs. actual rocket at 52.00 m tall
 
 
 var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;    //flags
 var gravity = 9.81; // acceleration due to gravity
 var thrustLevel = 4; //0 - 4
-var forces = {x: 0, y:0};
+
 
 
 var stage, queue, rocket_sheet, fire_sheet, thruster_sheet;
 var rocket;
 var pauseText, stats;
 var velocityX = 0;
-var velocityY = -50;
+var velocityY = 0;
 var direction = 0;
 
 
@@ -119,7 +119,6 @@ function removeKey(e){ //alert("removeKey()");
 
 function run(e){
     if(!e.paused){
-        calcVelocity(e);
         
         
         
@@ -149,9 +148,21 @@ function pause(e){
 function updateRocket(){
     
     
-    var nextX, nextY;
-    
+    var nextX, nextY, angle, yThrust, xThrust;
     nextX = rocket.x;
+    
+    if(wKeyDown){
+        
+        angle = getStandardAngle(rocket.rotation);
+        xThrust = getXThrust(angle);
+        nextX += xThrust;
+        velocityX = xThrust;
+        //alert(velocityX);
+    }
+    else{
+        nextX += velocityX;
+    }
+
     
     
     
@@ -162,17 +173,65 @@ function updateRocket(){
     nextY = rocket.y;
     
     if(wKeyDown){
-        nextY =
+        
+        angle = getStandardAngle(rocket.rotation);
+        yThrust = getYThrust(angle);
+        nextY -= yThrust;
+        velocityY++;
+    }
+    else if(!wKeyDown){
+        nextY += gravity;
+        velocityY--;
     }
     
     
+    
+    
+    //calculate next angle
+    nextAngle = rocket.rotation;
+    //alert(nextAngle);
+    if(aKeyDown){
+        rocket.rotation -= 1;
+    }
+    if(dKeyDown){
+        rocket.rotation += 1;
+    }
+    
+
+    rocket.nextY = nextY;
+    rocket.nextX = nextX;
 }
 
 
 
 
 function renderRocket(){
+    rocket.y = rocket.nextY;
+    rocket.x = rocket.nextX;
+
+}
+
+//convert CreateJS default to standard geometric convention
+function getStandardAngle(rotation){
+    return 90 - rotation;
+}
+
+function getYThrust(angle){
+    return THRUST * (thrustLevel/4) * Math.sin(degreesToRadians(angle));
+}
+
+function getXThrust(angle){
+    return THRUST * (thrustLevel/4) * Math.cos(degreesToRadians(angle));
+}
+
+function degreesToRadians(degrees){
     
+    return degrees * Math.PI / 180;
+}
+
+function radiansToDegrees(radians){
+    
+    return radians * 180 / Math.PI;
 }
 
 
@@ -336,8 +395,10 @@ function buildStats(color){
     var m;
     
     m = "Gravity: " + gravity + " m/s/s\n\n"
-    + "Velocity (x): " + velocityX + " m/s\n\n"
-    + "Velocity (y): " + velocityY + " m/s\n\n";
+    + "Velocity (x): " + velocityX.toFixed(2) + " m/s\n\n"
+    + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n"
+    + "Rotation: " + rocket.rotation + " degrees\n\n"
+    + "NextY: " + rocket.nextY + " px\n\n";
     
     stats = new createjs.Text(m, "24px Arial", color);
     stats.x = stage.canvas.width - 300;
@@ -349,7 +410,9 @@ function buildStats(color){
 function updateStats(){
     stats.text = "Gravity: " + gravity + " m/s/s\n\n"
     + "Velocity (x): " + velocityX.toFixed(2) + " m/s\n\n"
-    + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n";
+    + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n"
+    + "Rotation: " + rocket.rotation + " degrees\n\n"
+    + "NextY: " + rocket.nextY + " px\n\n";
 }
 
 
@@ -537,7 +600,7 @@ function buildRect(x, y, width, height, color){
 //=================================================================================//
 //                                   Physics                                       //
 //=================================================================================//
-
+/*
 function sumForces(e){
     var xTotal, yTotal;
     
@@ -582,14 +645,6 @@ function calcForceComponent(magnitude,type){
     
     return component;
 }
+*/
 
-function degreesToRadians(degrees){
-    
-    return degrees * Math.PI / 180;
-}
-
-function radiansToDegrees(radians){
-    
-    return radians * 180 / Math.PI;
-}
 

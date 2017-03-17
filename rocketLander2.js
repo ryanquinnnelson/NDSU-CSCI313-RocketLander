@@ -380,7 +380,7 @@ function calcNextPosition(){
     nextY = rocket.y;
     yThrust = 0;
     
-    if(wKeyDown && fuel > 0){   //engine thrusting
+    if(wKeyDown && fuel > 0 && thrustLevel > 0){   //engine thrusting
         
         angle = getStandardAngle(rocket.rotation);  //degrees
         yThrust = getYThrust(angle);
@@ -388,7 +388,7 @@ function calcNextPosition(){
         nextY += velocityY;
         
     }
-    else{
+    else{  
         nextY += velocityY;
         velocityY += gravity/49.05; //~0.2 for 9.81 gravity
     }
@@ -669,8 +669,8 @@ function buildPhysicsText(color){
 function buildFuelText(color){
     var m;
     
-    m = "Rocket Fuel: " + START_FUEL.toFixed(1) + " / " + START_FUEL.toFixed(1) + "\n\n"
-      + "Monopropellant: " + START_MONO.toFixed(1) + " / " + START_MONO.toFixed(1);
+    m = "Rocket Fuel: " + START_FUEL + " / " + START_FUEL + "\n\n"
+      + "Monopropellant: " + START_MONO + " / " + START_MONO;
     
     fuelText = new createjs.Text(m, "30px Arial", color);
     fuelText.x = stage.canvas.width-400;
@@ -690,8 +690,8 @@ function updateStats(){
                      + "Thrust Level: " + thrustLevel + "/4\n\n";
     
     //fuel
-    fuelText.text = "Rocket Fuel: " + fuel.toFixed(1) + " / " + START_FUEL.toFixed(1) + "\n\n"
-                  + "Monopropellant: " + mono.toFixed(1) + " / " + START_MONO.toFixed(1);
+    fuelText.text = "Rocket Fuel: " + fuel + " / " + START_FUEL + "\n\n"
+                  + "Monopropellant: " + mono + " / " + START_MONO;
 }
 
 

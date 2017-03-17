@@ -16,8 +16,8 @@ const W_KEY = 87;
 //additional constants
 const THRUST = 35;  //kN
 const PIXELS_PER_METER = 496 / 52;  //pixel image vs. actual rocket at 52.00 m tall
-const START_FUEL = 200; //starting fuel level
-const START_MONO = 25;  //starting monopropellant level
+const START_FUEL = 500; //starting fuel level
+const START_MONO = 100;  //starting monopropellant level
 const START_VX = 0;     //starting horizontal velocity
 const START_VY = 10;    //starting vertical velocity
 
@@ -196,6 +196,9 @@ function run(e){
             //animations
             updateAnimations();
             
+            //fuel
+            updateFuelLevels();
+            
             //GUI
             updateStats();
         }
@@ -252,12 +255,12 @@ function removeRocket(){
 }
 
 function resetGame(){
+    
     removeRocket();
     
     gameoverText.alpha = 0;
     
     buildAndPlaceRocket();
-    
 }
 
 function changeLevel(){ alert("change level");
@@ -280,6 +283,32 @@ function decreaseThrust(){
     }
 }
 
+function reduceMono(){
+    
+    if(mono >= 1){
+        mono -= 1;
+    }
+}
+
+function reduceFuel(){
+    
+    if(fuel >= 1){
+        fuel -= 1;
+    }
+}
+
+function updateFuelLevels(){
+    
+    //update monopropellant
+    if(aKeyDown || dKeyDown){
+        reduceMono();
+    }
+    //update fuel levels
+    if(wKeyDown && thrustLevel > 0){
+        reduceFuel();
+    }
+}
+
 
 //=================================================================================//
 //                                  Movement                                       //
@@ -298,20 +327,30 @@ function updateRocket(){
     detectCollision(nextPt);
     
     //determine next rotation
-    if(aKeyDown){
+    nextRotation = calcNextRotation();
+    
+    //store values
+    rocket.nextY = nextPt.y;
+    rocket.nextX = nextPt.x;
+    rocket.nextRotation = nextRotation;
+}
+
+
+function calcNextRotation(){
+    
+    var nextRotation;
+    
+    if(aKeyDown && mono > 0){
         nextRotation = rocket.rotation + 1;
     }
-    else if(dKeyDown){
+    else if(dKeyDown && mono > 0){
         nextRotation = rocket.rotation - 1;
     }
     else{
         nextRotation = rocket.rotation;
     }
     
-    //store values
-    rocket.nextY = nextPt.y;
-    rocket.nextX = nextPt.x;
-    rocket.nextRotation = nextRotation;
+    return nextRotation;
 }
 
 
@@ -323,12 +362,13 @@ function calcNextPosition(){
     nextX = rocket.x;
     xThrust = 0;
     
-    if(wKeyDown){ //engine thrusting
+    if(wKeyDown && fuel > 0){ //engine thrusting
         
         angle = getStandardAngle(rocket.rotation);  //degrees
         xThrust = getXThrust(angle);
         nextX += xThrust;
         velocityX = xThrust;
+        
     }
     else{   //continue drifting in previous direction
         
@@ -340,15 +380,15 @@ function calcNextPosition(){
     nextY = rocket.y;
     yThrust = 0;
     
-    if(wKeyDown){   //engine thrusting
+    if(wKeyDown && fuel > 0){   //engine thrusting
         
         angle = getStandardAngle(rocket.rotation);  //degrees
         yThrust = getYThrust(angle);
         velocityY -= yThrust/200;   //??improve how this works
         nextY += velocityY;
-    }
-    else if(!wKeyDown){
         
+    }
+    else{
         nextY += velocityY;
         velocityY += gravity/49.05; //~0.2 for 9.81 gravity
     }
@@ -619,7 +659,7 @@ function buildPhysicsText(color){
     
     //Text object
     physicsText = new createjs.Text(m, "24px Arial", color);
-    physicsText.x = stage.canvas.width - 350;
+    physicsText.x = stage.canvas.width - 400;
     physicsText.y = 175;
     
     stage.addChild(physicsText);
@@ -629,11 +669,11 @@ function buildPhysicsText(color){
 function buildFuelText(color){
     var m;
     
-    m = "Rocket Fuel: " + START_FUEL + " / " + START_FUEL + "\n\n"
-      + "Monopropellant: " + START_MONO + " / " + START_MONO;
+    m = "Rocket Fuel: " + START_FUEL.toFixed(1) + " / " + START_FUEL.toFixed(1) + "\n\n"
+      + "Monopropellant: " + START_MONO.toFixed(1) + " / " + START_MONO.toFixed(1);
     
     fuelText = new createjs.Text(m, "30px Arial", color);
-    fuelText.x = stage.canvas.width-350;
+    fuelText.x = stage.canvas.width-400;
     fuelText.y = 50;
     
     stage.addChild(fuelText);
@@ -650,8 +690,8 @@ function updateStats(){
                      + "Thrust Level: " + thrustLevel + "/4\n\n";
     
     //fuel
-    fuelText.text = "Rocket Fuel: " + fuel + " / " + START_FUEL + "\n\n"
-                  + "Monopropellant: " + mono + " / " + START_MONO;
+    fuelText.text = "Rocket Fuel: " + fuel.toFixed(1) + " / " + START_FUEL.toFixed(1) + "\n\n"
+                  + "Monopropellant: " + mono.toFixed(1) + " / " + START_MONO.toFixed(1);
 }
 
 
@@ -735,6 +775,8 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
     thruster_sheet = new createjs.SpriteSheet(data);
 }
 
+//-----------------------------------thrusters-----------------------------------
+
 function updateThrusters(){
     var isThrustingL, isThrustingR;
     
@@ -758,6 +800,36 @@ function updateThrusters(){
         rocket.getChildByName("thrusterR").gotoAndPlay("noThrust");
     }
 }
+
+function cutThrustersAnimation(){
+ 
+    var isThrustingR, isThrustingL;
+    
+    //flags
+    isThrustingL = rocket.getChildByName("thrusterL").currentAnimation === "thrust";
+    isThrustingR = rocket.getChildByName("thrusterR").currentAnimation === "thrust";
+    
+    if(isThrustingL || isThrustingR){
+        rocket.getChildByName("thrusterL").gotoAndPlay("noThrust");
+        rocket.getChildByName("thrusterR").gotoAndPlay("noThrust");
+    }
+}
+
+function flareThrusters(){
+    
+    var isThrustingR, isThrustingL;
+    
+    //flags
+    isThrustingL = rocket.getChildByName("thrusterL").currentAnimation === "thrust";
+    isThrustingR = rocket.getChildByName("thrusterR").currentAnimation === "thrust";
+    
+    if(!isThrustingL && !isThrustingR){
+        rocket.getChildByName("thrusterL").gotoAndPlay("thrust");
+        rocket.getChildByName("thrusterR").gotoAndPlay("thrust");
+    }
+}
+
+//-----------------------------------engine-----------------------------------
 
 
 function updateEngine(){
@@ -845,14 +917,8 @@ function updateEngine(){
         } //end switch
     } //end if
 }
-function landedAnimations(){
-    cutEngineAnimation();
-    flareThrusters();
-}
 
-function crashAnimations(){
-    
-}
+
 function cutEngineAnimation(){
     
     var child, engineFiring;
@@ -888,14 +954,36 @@ function cutEngineAnimation(){
     }
 }
 
-function flareThrusters(){
-    
-}
+
 
 function updateAnimations(){
     
-    updateThrusters();
-    updateEngine();
+    //thrusters animation
+    if(mono > 0){
+        updateThrusters();
+    }
+    else{
+        cutThrustersAnimation();
+    }
+    
+    //engine animation
+    if(fuel > 0){
+        updateEngine();
+    }
+    else{
+        cutEngineAnimation();
+    }
+    
+    
+}
+
+function landedAnimations(){
+    
+    cutEngineAnimation();
+    flareThrusters();
+}
+
+function crashAnimations(){
     
 }
 

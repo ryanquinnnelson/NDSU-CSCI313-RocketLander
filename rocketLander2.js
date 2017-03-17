@@ -55,7 +55,7 @@ function init(){
         {id: "falcon9", src: "Assets/Falcon9.png"},
         {id: "falcon9fire", src: "Assets/Falcon9Fire.png"},
         {id: "falcon9thrusters", src: "Assets/Falcon9Thrusters2.png"},
-        {id: "smoke", src: "Assets/Smoke.png"}
+        {id: "smoke", src: "Assets/Smoke3.png"}
     ]);
 }
 
@@ -1114,7 +1114,7 @@ function buildSmoke(x,y){
     b = new createjs.Bitmap(image);
     b.x = x - b.image.width/2 + randomShift;
     b.y = y - b.image.height/2;
-   // b.alpha = 0.1;
+    //b.alpha = 0.2;
     b.addEventListener("added", fadeout);
     
     stage.addChild(b);

@@ -1127,7 +1127,7 @@ function fadeout(e){
     
     randomMS = Math.floor(Math.random() * 500);    //0 - 1000
     
-    createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 20}, randomMS + 500).call(smokeComplete);
+    createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS + 3000).call(smokeComplete);
 }
 
 function smokeComplete(){

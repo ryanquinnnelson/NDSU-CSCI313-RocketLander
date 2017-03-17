@@ -3,34 +3,41 @@
 //=================================================================================//
 //CONSTANTS
 //integers represent the keycode of certain keys on the keyboard
-const W_KEY = 87;
+const SPACEBAR = 32;
+const LEFT_ARROW = 37;
+const UP_ARROW = 38;
+const RIGHT_ARROW = 39;
+const DOWN_ARROW = 40;
 const A_KEY = 65;
 const D_KEY = 68;
 const S_KEY = 83;
-const UP_ARROW = 38;
-const DOWN_ARROW = 40;
-const ESC_KEY = 27;
-const SPACEBAR = 32;
+const W_KEY = 87;
 
-
-const MASS = 27500; //kg
+//additional constants
 const THRUST = 35;  //kN
 const PIXELS_PER_METER = 496 / 52;  //pixel image vs. actual rocket at 52.00 m tall
+const START_FUEL = 200; //starting fuel level
+const START_MONO = 25;  //starting monopropellant level
+const START_VX = 0;     //starting horizontal velocity
+const START_VY = 10;    //starting vertical velocity
 
 
-var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;    //flags
-var thrustChanged = false;
-var gravity = 9.81; // acceleration due to gravity
-var thrustLevel = 0; //0 - 4
+//initialized variables
+var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;    //flags for key input
+var thrustChanged = false; //flag to detect whether thrust level has been changed
+var gravity = 9.81;     // starting acceleration due to gravity
+var thrustLevel = 0;    //starting thrust level, values from 0 - 4
+var level = 1;
 
 
-
-var stage, queue, rocket_sheet, fire_sheet, thruster_sheet;
-var rocket, landingSite;
-var pauseText, winText, stats;
-var velocityX = 0;
-var velocityY = 10;
-var direction = 0;
+//uninitialized variables
+var stage, queue;   //createjs object
+var rocket_sheet, fire_sheet, thruster_sheet; //spritesheets
+var rocket, landingSite; //game objects
+var pausedText, landedText, physicsText, fuelText; //gui
+var altitude;   //height of rocket above landing site in m
+var velocityX, velocityY;   //current horizontal, vertical speed in m/s
+var landed; //flag to detect whether rocket has successfully landed
 
 
 
@@ -54,39 +61,58 @@ function load(){
     
     //game objects
     buildSpriteSheets();
-    buildGame();
-}
-
-
-
-function buildGame(){
-    placeRocket();
-    buildLandingSite(300);
-    buildPauseText("yellow");
-    buildWinText("yellow");
-    buildStats("white");
-    buildRect(0,0,575,stage.canvas.height-50,"red");
+    buildGameObjects();
+    buildGUI();
+    //buildRect(0,0,575,stage.canvas.height-50,"red");    //debugging
+    
     
     //ticker
-    createjs.Ticker.framerate = 60;
-    createjs.Ticker.addEventListener("tick", run);
+    //createjs.Ticker.framerate = 60;
+    //createjs.Ticker.addEventListener("tick", run);
     
     //listen for key / mouse events
     window.onkeydown  = detectKey;  //listener calls detectKey() for "keydown"
     window.onkeyup = removeKey;     //listener calls removeKey() for "keyup"
-    
-    
 }
 
-function placeRocket(){
-    //window.clearTimeout(placeRocket);   //if timeout was used to trigger this method
-    velocityX = 0;
-    velocityY = 10;
+function buildGUI(){
     
-    var randomX = Math.floor(Math.random() * stage.canvas.width/2);
-    var randomDirection = Math.floor(Math.random() * 10);
+    buildPausedText("yellow");
+    buildLandedText("yellow");
+    buildPhysicsText("white");
+    buildFuelText("white");
+}
+
+function buildGameObjects(){
     
-    buildRocket(randomX + stage.canvas.width/4,-100,randomDirection);
+    buildLandingSite(300,(stage.canvas.height - 50), 300, 10);
+    buildAndPlaceRocket();
+}
+
+
+
+function buildAndPlaceRocket(){
+  
+    var randomX, randomRotation, shiftX, startY;
+    
+    randomX = Math.floor(Math.random() * stage.canvas.width/2); //
+    randomRotation = Math.floor(Math.random() * 10);        //0 - 10
+    shiftX = stage.canvas.width/5;
+    startY = -150;
+    
+    buildRocket(randomX + shiftX, startY, randomRotation);
+    
+    resetGameValues();
+}
+
+function resetGameValues(){
+    
+    //set initial values
+    velocityX = START_VX;
+    velocityY = START_VY;
+    fuel = START_FUEL;
+    mono = START_MONO;
+    landed = false;
 }
 
 
@@ -98,7 +124,9 @@ function placeRocket(){
 
 
 function detectKey(e){ //alert("detectKey()");
+    
     e = !e ? window.event : e; //if event is not event, get window.event;
+    
     switch(e.keyCode) {
         case W_KEY:
             wKeyDown = true;    //flag for movement
@@ -118,16 +146,19 @@ function detectKey(e){ //alert("detectKey()");
         case DOWN_ARROW:
             decreaseThrust();
             break;
-        case ESC_KEY:
+        case RIGHT_ARROW:
+            changeLevel();
             break;
         case SPACEBAR:
-            pause(e);
+            pause();
             break;
     }
 }
 
 function removeKey(e){ //alert("removeKey()");
+    
     e = !e ? window.event : e;  //if event is not event, get window.event;
+    
     switch(e.keyCode) {
         case W_KEY:
             wKeyDown = false;   //reset flag
@@ -162,38 +193,44 @@ function run(e){
         //GUI
         updateStats();
         
+        //stage
         stage.update();
     }
 }
 
-function pause(e){
+function pause(){
+    
     createjs.Ticker.paused = !createjs.Ticker.paused;
-    pauseText.visible = !pauseText.visible;
+    pausedText.visible = !pausedText.visible;
+    
+    //stage
     stage.update();
 }
 
-function gameOver(type){
+function gameOver(){
     
-    switch(type){
-        case 0:
-            resetGame();
-            break;
-        case 1:
-            winText.alpha = 1;
-            resetGame();
-            break;
+    if(landed){ //successful landing
+        //make visible, wait 2 seconds, then resetGame
+        createjs.Tween.get(landedText).to({alpha: 1}, 100).wait(2000).call(resetGame);
+    }
+    else{   //failed landing
+        resetGame();
     }
 }
 
 function resetGame(){
     
-    var time, futureTime;
-    
     if(stage.contains(rocket)){
 
         stage.removeChild(rocket);
-        createjs.Tween.get(winText).to({alpha: 0}, 2000).call(placeRocket);
+        
+        //make invisible over 2 seconds, then place rocket in a new position
+        createjs.Tween.get(landedText).to({alpha: 0}, 2000).call(placeRocket);
     }
+}
+
+function changeLevel(){ alert("change level");
+    
 }
 
 
@@ -252,11 +289,11 @@ function detectCollision(pt){
     
     if(properLanding){
         pt.y = landingSite.y - remainderY;
-        gameOver(1);
+        gameOver();
     }
     else if(correctYRange){
         //react based on what was hit
-        gameOver(0);
+        gameOver();
     }
 }
 
@@ -363,7 +400,7 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     rocket.landingHeight = 529;     //distance from top to bottom of landing legs
     rocket.nextX = 0;
     rocket.nextY = 0;
-    rocket.nextAngle = 0;
+    rocket.landed = false;
     
     //CreateJS properties
     rocket.regY = rocket.center_of_mass;    //vertical registration point
@@ -481,15 +518,20 @@ function buildCenterOfMass(target, color, radius){
     target.addChild(com);
 }
 
-function buildLandingSite(x){
+function buildLandingSite(x,y,w,h){
+    
+    //Shape
     landingSite = new createjs.Shape();
     
     //createjs properties
-    landingSite.graphics.beginFill("green").drawRect(0, 0, 300,10);
+    landingSite.graphics.beginFill("green").drawRect(0, 0, w,h);
     landingSite.x = x;
-    landingSite.y = stage.canvas.height - 50;
-    landingSite.width = 300;
+    landingSite.y = y;
     
+    //dynamically injected properties
+    landingSite.width = w;
+    
+    //add to container
     stage.addChild(landingSite);
 }
 
@@ -497,50 +539,72 @@ function buildLandingSite(x){
 //                                       GUI                                       //
 //=================================================================================//
 
-function buildPauseText(color){
-    pauseText = new createjs.Text("Game Paused", "40px Arial", color);
-    pauseText.textAlign = "center";
-    pauseText.x = stage.canvas.width/2;
-    pauseText.y = stage.canvas.height/2;
-    pauseText.visible = false;
+function buildPausedText(color){
+    pausedText = new createjs.Text("Game Paused", "40px Arial", color);
+    pausedText.textAlign = "center";
+    pausedText.x = stage.canvas.width/2;
+    pausedText.y = stage.canvas.height/2;
+    pausedText.visible = false;
     
-    stage.addChild(pauseText);
+    stage.addChild(pausedText);
 }
 
-function buildWinText(color){
-    winText = new createjs.Text("Landed!", "80px Arial", color);
-    winText.textAlign = "center";
-    winText.x = stage.canvas.width/2;
-    winText.y = stage.canvas.height/2;
-    winText.alpha = 0;
+function buildLandedText(color){
+    landedText = new createjs.Text("Landed!", "100px Arial", color);
+    landedText.textAlign = "center";
+    landedText.x = stage.canvas.width/2;
+    landedText.y = stage.canvas.height/2;
+    landedText.alpha = 0;
     
-    stage.addChild(winText);
+    stage.addChild(landedText);
 }
 
-function buildStats(color){
+function buildPhysicsText(color){
+    
     var m;
     
-    m = "Gravity: " + gravity + " m/s/s\n\n"
-    + "Velocity (x): " + velocityX.toFixed(2) + " m/s\n\n"
-    + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n"
-    + "Rotation: " + rocket.rotation + " degrees\n\n"
-    + "NextY: " + rocket.nextY + " px\n\n"
-    + "Thrust Level: " + thrustLevel + "\n\n";
+    m = "-----------------------------------------\n\n"
+    + "Velocity (x): 100 m/s\n\n"
+    + "Velocity (y): 100 m/s\n\n"
+    + "Rotation: 180 degrees \n\n"
+    + "Altitude: 400 m\n\n"
+    + "Thrust Level: 4/4 \n\n";
     
-    stats = new createjs.Text(m, "24px Arial", color);
-    stats.x = stage.canvas.width - 300;
-    stats.y = 50;
+    //Text object
+    physicsText = new createjs.Text(m, "24px Arial", color);
+    physicsText.x = stage.canvas.width - 350;
+    physicsText.y = 175;
     
-    stage.addChild(stats);
+    stage.addChild(physicsText);
+    stage.update();
+}
+
+function buildFuelText(color){
+    var m;
+    
+    m = "Rocket Fuel: " + START_FUEL + " / " + START_FUEL + "\n\n"
+      + "Monopropellant: " + START_MONO + " / " + START_MONO;
+    
+    fuelText = new createjs.Text(m, "30px Arial", color);
+    fuelText.x = stage.canvas.width-350;
+    fuelText.y = 50;
+    
+    stage.addChild(fuelText);
+    stage.update();
 }
 
 function updateStats(){
-    stats.text = "Gravity: " + gravity + " m/s/s\n\n"
-    + "Velocity (x): " + velocityX.toFixed(2) + " m/s\n\n"
-    + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n"
-    + "Rotation: " + rocket.rotation + " degrees\n\n"
-    + "NextY: " + rocket.nextY + " px\n\n"
-    + "Thrust Level: " + thrustLevel + "\n\n";
+    
+    //physics
+    physicsText.text = "Velocity (x): " + velocityX.toFixed(2) + " m/s\n\n"
+                     + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n"
+                     + "Rotation: " + rocket.rotation + " degrees\n\n"
+                     + "Altitude: " + (rocket.nextY / PIXELS_PER_METER).toFixed(2) + " m\n\n"
+                     + "Thrust Level: " + thrustLevel + "/4\n\n";
+    
+    //fuel
+    fuelText.text = "Rocket Fuel: " + fuel + " / " + START_FUEL + "\n\n"
+                  + "Monopropellant: " + mono + " / " + START_MONO;
 }
 
 

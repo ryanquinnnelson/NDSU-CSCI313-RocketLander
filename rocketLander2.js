@@ -40,8 +40,8 @@ var velocityX, velocityY;   //current horizontal, vertical speed in m/s
 var landed; //flag to detect whether rocket has successfully landed
 var gameover;
 var count;
-
-
+var thrusterPtL, thrusterPtR;
+var tinyPt, smallPt, mediumPt, largePt;
 
 
 
@@ -54,7 +54,8 @@ function init(){
     queue.loadManifest([
         {id: "falcon9", src: "Assets/Falcon9.png"},
         {id: "falcon9fire", src: "Assets/Falcon9Fire.png"},
-        {id: "falcon9thrusters", src: "Assets/Falcon9Thrusters2.png"}
+        {id: "falcon9thrusters", src: "Assets/Falcon9Thrusters2.png"},
+        {id: "smoke", src: "Assets/Smoke.png"}
     ]);
 }
 
@@ -65,7 +66,7 @@ function load(){
     buildSpriteSheets();
     buildGameObjects();
     buildGUI();
-    //buildRect(0,0,575,stage.canvas.height-50,"red");    //debugging
+    //buildRect(0,0,450,133,"red");    //debugging
     
     
     //ticker
@@ -103,6 +104,7 @@ function buildAndPlaceRocket(){
     startY = -150;
     
     buildRocket(randomX + shiftX, startY, randomRotation);
+    //buildRocket(400,400, 0);
     
     resetGameValues();
 }
@@ -501,6 +503,8 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     buildLegs();
     buildFire();
     buildThrusters();
+    buildThrusterPoints();
+    buildFlamePoints();
     buildCenterOfMass(rocket, "red", 10);
     
     //add to stage
@@ -605,6 +609,53 @@ function buildCenterOfMass(target, color, radius){
     target.addChild(com);
 }
 
+function buildThrusterPoints(){ //alert("buildThrusterPoints");
+    
+    //right thruster
+    //Shape d
+    thrusterPtR = new createjs.Shape();
+    thrusterPtR.x = rocket.regX+25;
+    thrusterPtR.y = 42;
+    //thrusterPtR.graphics.beginFill("red").drawCircle(thrusterPtR.x, thrusterPtR.y, 5);
+    
+    //left thruster
+    //Shape
+    thrusterPtL = new createjs.Shape();
+    thrusterPtL.x = rocket.regX-25;
+    thrusterPtL.y = 42;
+    //thrusterPtL.graphics.beginFill("green").drawCircle(thrusterPtL.x, thrusterPtL.y, 5);
+    
+    rocket.addChild(thrusterPtL, thrusterPtR);
+}
+
+function buildFlamePoints(){
+    //large flame
+    largePt = new createjs.Shape();
+    largePt.x = rocket.regX;
+    largePt.y = rocket.regY + 65;
+    //largePt.graphics.beginFill("red").drawCircle(largePt.x, largePt.y, 5);
+    
+    //medium flame
+    mediumPt = new createjs.Shape();
+    mediumPt.x = rocket.regX;
+    mediumPt.y = rocket.regY - 20;
+    //mediumPt.graphics.beginFill("blue").drawCircle(mediumPt.x, mediumPt.y, 5);
+    
+    //small flame
+    smallPt = new createjs.Shape();
+    smallPt.x = rocket.regX;
+    smallPt.y = rocket.regY - 65;
+    //smallPt.graphics.beginFill("green").drawCircle(smallPt.x, smallPt.y, 5);
+    
+    //tiny flame
+    tinyPt = new createjs.Shape();
+    tinyPt.x = rocket.regX;
+    tinyPt.y = rocket.regY - 75;
+    //tinyPt.graphics.beginFill("orange").drawCircle(tinyPt.x, tinyPt.y, 5);
+    
+    rocket.addChild(largePt, mediumPt, smallPt, tinyPt);
+}
+
 function buildLandingSite(x,y,w,h){
     
     //Shape
@@ -621,6 +672,8 @@ function buildLandingSite(x,y,w,h){
     //add to container
     stage.addChild(landingSite);
 }
+
+
 
 //=================================================================================//
 //                                       GUI                                       //
@@ -954,13 +1007,14 @@ function cutEngineAnimation(){
     }
 }
 
-
+//-----------------------------------overall-----------------------------------
 
 function updateAnimations(){
     
     //thrusters animation
     if(mono > 0){
         updateThrusters();
+        thrusterSmoke();
     }
     else{
         cutThrustersAnimation();
@@ -969,6 +1023,7 @@ function updateAnimations(){
     //engine animation
     if(fuel > 0){
         updateEngine();
+        engineSmoke();
     }
     else{
         cutEngineAnimation();
@@ -985,6 +1040,99 @@ function landedAnimations(){
 
 function crashAnimations(){
     
+}
+//-----------------------------------smoke-----------------------------------
+
+function thrusterSmoke(){
+    
+    var isThrustingL, isThrustingR, globalPt;
+    
+    //flags
+    isThrustingL = rocket.getChildByName("thrusterL").currentAnimation === "thrust";
+    isThrustingR = rocket.getChildByName("thrusterR").currentAnimation === "thrust";
+    
+    
+    if(isThrustingR){
+        //get current location of tip of right thrust animation
+        globalPt = thrusterPtR.localToGlobal(thrusterPtR.x, thrusterPtR.y);
+        //alert(globalPt);
+        buildSmoke(globalPt.x, globalPt.y, 1);
+        
+    }
+    
+    if(isThrustingL){
+        //get current location of tip of left thrust animation
+        globalPt = thrusterPtL.localToGlobal(thrusterPtL.x, thrusterPtL.y);
+        //alert(globalPt);
+        buildSmoke(globalPt.x, globalPt.y);
+    }
+}
+
+function engineSmoke(){
+    
+    var globalPt, child, engineFiring;
+    
+    child = rocket.getChildByName("fire");
+    engineFiring =  child.currentAnimation === "tinyFire" ||
+                    child.currentAnimation === "smallFire" ||
+                    child.currentAnimation === "mediumFire" ||
+                    child.currentAnimation === "largeFire";
+    
+    if(engineFiring){
+        switch(thrustLevel){
+            case 1:
+                globalPt = tinyPt.localToGlobal(tinyPt.x, tinyPt.y);
+                break;
+            case 2:
+                globalPt = smallPt.localToGlobal(smallPt.x, smallPt.y);
+                break;
+            case 3:
+                globalPt = mediumPt.localToGlobal(mediumPt.x, mediumPt.y);
+                break;
+            case 4:
+                globalPt = largePt.localToGlobal(largePt.x, largePt.y);
+                break;
+        }
+        
+        buildSmoke(globalPt.x, globalPt.y);
+    }
+}
+
+
+
+function buildSmoke(x,y){
+
+    var b, image,randomX, randomShift, randomDirection;
+    
+    randomDirection = Math.random() > 0.5 ? -1 : 1;
+    randomX = Math.floor(Math.random() * 30);
+    randomShift = randomX * randomDirection;
+    
+    
+    image = queue.getResult("smoke");
+    
+    b = new createjs.Bitmap(image);
+    b.x = x - b.image.width/2 + randomShift;
+    b.y = y - b.image.height/2;
+   // b.alpha = 0.1;
+    b.addEventListener("added", fadeout);
+    
+    stage.addChild(b);
+}
+
+
+function fadeout(e){
+    
+    var randomMS;
+    
+    randomMS = Math.floor(Math.random() * 500);    //0 - 1000
+    
+    createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 20}, randomMS + 500).call(smokeComplete);
+}
+
+function smokeComplete(){
+    
+    stage.removeChild(this);
 }
 
 //=================================================================================//

@@ -1114,7 +1114,7 @@ function buildSmoke(x,y){
     b = new createjs.Bitmap(image);
     b.x = x - b.image.width/2 + randomShift;
     b.y = y - b.image.height/2;
-    //b.alpha = 0.2;
+    b.alpha = 0.5;
     b.addEventListener("added", fadeout);
     
     stage.addChild(b);

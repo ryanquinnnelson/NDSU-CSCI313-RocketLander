@@ -66,7 +66,7 @@ function load(){
     buildSpriteSheets();
     buildGameObjects();
     buildGUI();
-    //buildRect(0,0,450,133,"red");    //debugging
+    //buildRect(0,0,450,133,"red");    //debugging purposes
     
     
     //ticker

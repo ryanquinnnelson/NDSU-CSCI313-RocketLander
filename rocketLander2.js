@@ -27,7 +27,7 @@ var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;    //flags for key input
 var thrustChanged = false; //flag to detect whether thrust level has been changed
 var gravity = 9.81;     // starting acceleration due to gravity
 var thrustLevel = 0;    //starting thrust level, values from 0 - 4
-var level = 1;
+var level = 0;
 
 
 //uninitialized variables
@@ -42,7 +42,7 @@ var gameover;
 var count;
 var thrusterPtL, thrusterPtR;
 var tinyPt, smallPt, mediumPt, largePt;
-var ads, site, background, slice;
+var eBackground, eSlice, oBackground, oSlice;
 
 
 
@@ -86,7 +86,7 @@ function load(){
 function buildGUI(){
     
     buildPausedText("yellow");
-    buildgameoverText("yellow");
+    buildGameoverText("yellow");
     buildPhysicsText("white");
     buildFuelText("white");
 }
@@ -94,9 +94,9 @@ function buildGUI(){
 function buildGameObjects(){
     
     buildEarthBackground();
-    //buildOceanBackground();
-    //buildLandingSite(390,(stage.canvas.height - 50), 330, 10);
+    buildOceanBackground();
     buildAndPlaceRocket();
+    buildLandingSite();
 }
 
 
@@ -117,6 +117,34 @@ function buildAndPlaceRocket(){
 }
 
 function resetGameValues(){
+    
+    //switch visible background and landing zone dimensions
+    switch(level){
+        case 0: //earth
+            //background and slice
+            eBackground.visible = true;
+            eSlice.visible = true;
+            oBackground.visible = false;
+            oSlice.visible = false;
+            
+            //remove existing landing pad and replace with new version
+            stage.removeChild(landingSite);
+            buildLandingSite();
+            break;
+        case 1: //ocean
+            //background and slice
+            eBackground.visible = false;
+            eSlice.visible = false;
+            oBackground.visible = true;
+            oSlice.visible = true;
+            
+            //remove existing landing pad and replace with new version
+            stage.removeChild(landingSite);
+            buildLandingSite();
+            break;
+    }
+    
+    
     
     //set initial values
     velocityX = START_VX;
@@ -272,7 +300,12 @@ function resetGame(){
     buildAndPlaceRocket();
 }
 
-function changeLevel(){ alert("change level");
+function changeLevel(){ //alert("change level");
+    
+    
+    level = (level + 1) % 2;
+    resetGame();
+    
     
 }
 
@@ -485,6 +518,10 @@ function radiansToDegrees(radians){
 
 function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     
+    var sliceIndex;
+    sliceIndex = stage.getChildIndex(eSlice);
+    //alert(sliceIndex);
+    
     //Container
     rocket = new createjs.Container();
     
@@ -515,7 +552,7 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     buildCenterOfMass(rocket, "red", 10);
     
     //add to stage
-    stage.addChildAt(rocket,1);
+    stage.addChildAt(rocket, sliceIndex);
     stage.update();
 }
 
@@ -663,16 +700,34 @@ function buildFlamePoints(){
     rocket.addChild(largePt, mediumPt, smallPt, tinyPt);
 }
 
-function buildLandingSite(x,y,w,h){
+function buildLandingSite(){
+    
+    var x,y, w, h;
     
     //Shape
     landingSite = new createjs.Shape();
+    landingSite.visible = false;
     
+    switch(level){
+        case 0: //earth
+            x = 0;
+            y = stage.canvas.height - 50;
+            w = stage.canvas.width;
+            h = 10;
+            break;
+        case 1: //ocean
+            x = 335;
+            y = stage.canvas.height - 50;
+            w = 450;
+            h = 10;
+            break;
+    }
+
     //createjs properties
     landingSite.graphics.beginFill("green").drawRect(0, 0, w,h);
     landingSite.x = x;
     landingSite.y = y;
-    landingSite.visible = false;
+    
     
     //dynamically injected properties
     landingSite.width = w;
@@ -690,24 +745,23 @@ function buildEarthBackground(){
     image = queue.getResult("earth");
     
     //Bitmap
-    background = new createjs.Bitmap(image);
-    background.x = background.y = 0;
+    eBackground = new createjs.Bitmap(image);
+    eBackground.x = eBackground.y = 0;
+    eBackground.visible = true;
     
     //add to container
-    stage.addChildAt(background, 0);    //bottom child
+    stage.addChildAt(eBackground, 0);    //bottom child
     
     
     //slice to hide flames that go into the ground (past 0 altitude)
     image = queue.getResult("earthslice");
     
     //Bitmap
-    slice = new createjs.Bitmap(image);
-    background.x = background.y = 0;
+    eSlice = new createjs.Bitmap(image);
+    eSlice.x = eSlice.y = 0;
+    eSlice.visible = true;
     
-    stage.addChild(slice);
-    
-    buildLandingSite(0,(stage.canvas.height - 50), stage.canvas.width, 10);
-    
+    stage.addChild(eSlice);
 }
 
 function buildOceanBackground(){
@@ -717,24 +771,23 @@ function buildOceanBackground(){
     image = queue.getResult("ocean");
     
     //Bitmap
-    background = new createjs.Bitmap(image);
-    background.x = background.y = 0;
+    oBackground = new createjs.Bitmap(image);
+    oBackground.x = oBackground.y = 0;
+    oBackground.visible = false;
     
     //add to container
-    stage.addChildAt(background, 0);    //bottom child
+    stage.addChildAt(oBackground, 0);    //bottom child
 
     
     //slice to hide flames that go into the ground (past 0 altitude)
     image = queue.getResult("oceanslice");
     
     //Bitmap
-    slice = new createjs.Bitmap(image);
-    background.x = background.y = 0;
+    oSlice = new createjs.Bitmap(image);
+    oSlice.x = oSlice.y = 0;
+    oSlice.visible = false;
     
-    stage.addChild(slice);
-                     
-    buildLandingSite(335,(stage.canvas.height - 50), 450, 10);
-
+    stage.addChild(oSlice);
 }
 
 
@@ -753,7 +806,7 @@ function buildPausedText(color){
     stage.addChild(pausedText);
 }
 
-function buildgameoverText(color){
+function buildGameoverText(color){
     gameoverText = new createjs.Text("Landed!", "60px Arial", color);
     gameoverText.textAlign = "center";
     gameoverText.x = stage.canvas.width/2;

@@ -42,6 +42,7 @@ var gameover;
 var count;
 var thrusterPtL, thrusterPtR;
 var tinyPt, smallPt, mediumPt, largePt;
+var ads, site, background, slice;
 
 
 
@@ -55,7 +56,11 @@ function init(){
         {id: "falcon9", src: "Assets/Falcon9.png"},
         {id: "falcon9fire", src: "Assets/Falcon9Fire.png"},
         {id: "falcon9thrusters", src: "Assets/Falcon9Thrusters2.png"},
-        {id: "smoke", src: "Assets/Smoke3.png"}
+        {id: "smoke", src: "Assets/Smoke3.png"},
+        {id: "ocean", src: "Assets/Ocean.png"},
+        {id: "earth", src: "Assets/Earth.png"},
+        {id: "earthslice", src: "Assets/EarthSlice.png"},
+        {id: "oceanslice", src: "Assets/OceanSlice.png"}
     ]);
 }
 
@@ -88,7 +93,9 @@ function buildGUI(){
 
 function buildGameObjects(){
     
-    buildLandingSite(300,(stage.canvas.height - 50), 300, 10);
+    buildEarthBackground();
+    //buildOceanBackground();
+    //buildLandingSite(390,(stage.canvas.height - 50), 330, 10);
     buildAndPlaceRocket();
 }
 
@@ -665,12 +672,69 @@ function buildLandingSite(x,y,w,h){
     landingSite.graphics.beginFill("green").drawRect(0, 0, w,h);
     landingSite.x = x;
     landingSite.y = y;
+    landingSite.visible = false;
     
     //dynamically injected properties
     landingSite.width = w;
     
     //add to container
     stage.addChild(landingSite);
+}
+
+
+function buildEarthBackground(){
+    var image;
+    
+    //earth background first
+    //HTML image element
+    image = queue.getResult("earth");
+    
+    //Bitmap
+    background = new createjs.Bitmap(image);
+    background.x = background.y = 0;
+    
+    //add to container
+    stage.addChildAt(background, 0);    //bottom child
+    
+    
+    //slice to hide flames that go into the ground (past 0 altitude)
+    image = queue.getResult("earthslice");
+    
+    //Bitmap
+    slice = new createjs.Bitmap(image);
+    background.x = background.y = 0;
+    
+    stage.addChild(slice);
+    
+    buildLandingSite(0,(stage.canvas.height - 50), stage.canvas.width, 10);
+    
+}
+
+function buildOceanBackground(){
+    
+    //ocean background first
+    //HTML image element
+    image = queue.getResult("ocean");
+    
+    //Bitmap
+    background = new createjs.Bitmap(image);
+    background.x = background.y = 0;
+    
+    //add to container
+    stage.addChildAt(background, 0);    //bottom child
+
+    
+    //slice to hide flames that go into the ground (past 0 altitude)
+    image = queue.getResult("oceanslice");
+    
+    //Bitmap
+    slice = new createjs.Bitmap(image);
+    background.x = background.y = 0;
+    
+    stage.addChild(slice);
+                     
+    buildLandingSite(335,(stage.canvas.height - 50), 450, 10);
+
 }
 
 

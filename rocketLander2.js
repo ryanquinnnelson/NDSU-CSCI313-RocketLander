@@ -34,7 +34,7 @@ var level = 0;
 var stage, queue;   //createjs object
 var rocket_sheet, fire_sheet, thruster_sheet; //spritesheets
 var rocket, landingSite; //game objects
-var pausedText, endText, physicsText, fuelText; //gui
+var pausedText, endText, physicsText, fuelText, helpText; //gui
 var altitude;   //height of rocket above landing site in m
 var velocityX, velocityY;   //current horizontal, vertical speed in m/s
 var landed; //flag to detect whether rocket has successfully landed
@@ -71,6 +71,8 @@ function load(){
     buildSpriteSheets();
     buildGameObjects();
     buildGUI();
+    
+    
     //buildRect(0,0,450,133,"red");    //debugging purposes
     
     
@@ -89,6 +91,7 @@ function buildGUI(){
     buildGameoverText("yellow");
     buildPhysicsText("white");
     buildFuelText("white");
+    buildHelpText("white");
 }
 
 function buildGameObjects(){
@@ -126,16 +129,23 @@ function resetGameValues(){
             oBackground.visible = false;
             oSlice.visible = false;
             
+            if(stage.contains(helpText)){
+                helpText.visible = true;
+            }
+            
+            
             //remove existing landing pad and replace with new version
             stage.removeChild(landingSite);
             buildLandingSite();
             break;
+            
         case 1: //ocean
             //background and slice
             eBackground.visible = false;
             eSlice.visible = false;
             oBackground.visible = true;
             oSlice.visible = true;
+            helpText.visible = false;
             
             //remove existing landing pad and replace with new version
             stage.removeChild(landingSite);
@@ -870,6 +880,22 @@ function buildFuelText(color){
     stage.update();
 }
 
+function buildHelpText(color){
+    
+    var m;
+    
+    m = "Press SPACEBAR to pause gameplay."
+    
+    helpText = new createjs.Text(m, "24px Arial", color);
+    helpText.x = stage.canvas.width-425;
+    helpText.y = stage.canvas.height- 40;
+    helpText.alpha = 0.75;
+    
+    stage.addChild(helpText);
+    stage.update();
+}
+
+
 function updateStats(){
     
     //physics
@@ -883,6 +909,8 @@ function updateStats(){
     fuelText.text = "Rocket Fuel: " + fuel + " / " + START_FUEL + "\n\n"
     + "Monopropellant: " + mono + " / " + START_MONO;
 }
+
+
 
 
 

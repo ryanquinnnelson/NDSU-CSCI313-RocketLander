@@ -102,16 +102,15 @@ function buildGameObjects(){
 
 
 function buildAndPlaceRocket(){
-  
+    
     var randomX, randomRotation, shiftX, startY;
     
-    randomX = Math.floor(Math.random() * stage.canvas.width/2); //
+    randomX = Math.floor(Math.random() * stage.canvas.width/2); //0 - 600
     randomRotation = Math.floor(Math.random() * 10);        //0 - 10
     shiftX = stage.canvas.width/5;
     startY = -150;
     
     buildRocket(randomX + shiftX, startY, randomRotation);
-    //buildRocket(400,400, 0);
     
     resetGameValues();
 }
@@ -237,6 +236,7 @@ function run(e){
             updateFuelLevels();
             
             //GUI
+            updateAltitude();
             updateStats();
         }
         else{
@@ -263,7 +263,7 @@ function endingSequence(){
     if(count === 1){    //to prevent from triggering multiple times b/c framerate
         
         if(landed){ //successful landing
-
+            
             //make gameoverText visible
             createjs.Tween.get(gameoverText).to({alpha: 1}, 50);
             
@@ -306,7 +306,7 @@ function changeLevel(){ //alert("change level");
         level = (level + 1) % 2;
         count++;
         resetGame();
-    } 
+    }
 }
 
 function increaseThrust(){
@@ -334,8 +334,11 @@ function reduceMono(){
 
 function reduceFuel(){
     
-    if(fuel >= 1){
-        fuel -= 1;
+    if(fuel > 0){
+        fuel -= thrustLevel;
+    }
+    if(fuel < 0){
+        fuel = 0;
     }
 }
 
@@ -430,7 +433,7 @@ function calcNextPosition(){
         nextY += velocityY;
         
     }
-    else{  
+    else{
         nextY += velocityY;
         velocityY += gravity/49.05; //~0.2 for 9.81 gravity
     }
@@ -462,7 +465,7 @@ function detectCollision(pt){
         pastLeftEdge = (rocket.x - shiftX >= landingSite.x);
         pastRightEdge = !(rocket.x + shiftX <= landingSite.x + landingSite.width);
         correctXRange = pastLeftEdge && !pastRightEdge;
-
+        
         landed = correctYRange && correctXRange && correctRotation && correctSpeed;
         
         //adjust position
@@ -511,7 +514,20 @@ function radiansToDegrees(radians){
     return radians * 180 / Math.PI;
 }
 
-
+function updateAltitude(){
+    
+    var totalHeight, startingY;
+    
+    startingY = -150;
+    totalHeight = landingSite.y - startingY - 328;
+    
+    if(rocket.y <= 0){
+        altitude = totalHeight + rocket.y;
+    }
+    else{
+        altitude = totalHeight - rocket.y;
+    }
+}
 //=================================================================================//
 //                                   Game Objects                                  //
 //=================================================================================//
@@ -520,7 +536,6 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     
     var sliceIndex;
     sliceIndex = stage.getChildIndex(eSlice);
-    //alert(sliceIndex);
     
     //Container
     rocket = new createjs.Container();
@@ -529,7 +544,7 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     rocket.landing_width = 151;     //distance in pixels between landing leg tips
     rocket.body_width = 39;         //width in pixels of rocket body
     rocket.center_of_mass = 351;    //distance in pixels from top of rocket to C.O.M.
-    rocket.height = 496;            //distance from top of rocket to bottom of engines
+    rocket.height = 496;            //distance from top rocket to bottom of engines
     rocket.landingHeight = 529;     //distance from top to bottom of landing legs
     rocket.nextX = 0;
     rocket.nextY = 0;
@@ -552,7 +567,7 @@ function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     buildCenterOfMass(rocket, "red", 10);
     
     //add to stage
-    stage.addChildAt(rocket, sliceIndex);
+    stage.addChildAt(rocket, sliceIndex);   //behind deepest slice to hide flames
     stage.update();
 }
 
@@ -604,6 +619,7 @@ function buildFire(){//alert("buildFire()");
 }
 
 function buildThrusters(){ //alert("buildThrusters()");
+    
     var thrusterL, thrusterR;
     
     //Sprite
@@ -627,10 +643,10 @@ function buildThrusters(){ //alert("buildThrusters()");
     
     //add to container behind other children
     rocket.addChildAt(thrusterL,thrusterR,0);
-    
 }
 
 function buildCenterOfMass(target, color, radius){
+    
     var com, add;
     
     //Shape
@@ -673,6 +689,7 @@ function buildThrusterPoints(){ //alert("buildThrusterPoints");
 }
 
 function buildFlamePoints(){
+    
     //large flame
     largePt = new createjs.Shape();
     largePt.x = rocket.regX;
@@ -722,12 +739,11 @@ function buildLandingSite(){
             h = 10;
             break;
     }
-
+    
     //createjs properties
     landingSite.graphics.beginFill("green").drawRect(0, 0, w,h);
     landingSite.x = x;
     landingSite.y = y;
-    
     
     //dynamically injected properties
     landingSite.width = w;
@@ -738,6 +754,7 @@ function buildLandingSite(){
 
 
 function buildEarthBackground(){
+    
     var image;
     
     //earth background first
@@ -777,7 +794,7 @@ function buildOceanBackground(){
     
     //add to container
     stage.addChildAt(oBackground, 0);    //bottom child
-
+    
     
     //slice to hide flames that go into the ground (past 0 altitude)
     image = queue.getResult("oceanslice");
@@ -797,6 +814,7 @@ function buildOceanBackground(){
 //=================================================================================//
 
 function buildPausedText(color){
+    
     pausedText = new createjs.Text("Game Paused", "40px Arial", color);
     pausedText.textAlign = "center";
     pausedText.x = stage.canvas.width/2;
@@ -807,6 +825,7 @@ function buildPausedText(color){
 }
 
 function buildGameoverText(color){
+    
     gameoverText = new createjs.Text("Landed!", "60px Arial", color);
     gameoverText.textAlign = "center";
     gameoverText.x = stage.canvas.width/2;
@@ -837,10 +856,11 @@ function buildPhysicsText(color){
 }
 
 function buildFuelText(color){
+    
     var m;
     
     m = "Rocket Fuel: " + START_FUEL + " / " + START_FUEL + "\n\n"
-      + "Monopropellant: " + START_MONO + " / " + START_MONO;
+    + "Monopropellant: " + START_MONO + " / " + START_MONO;
     
     fuelText = new createjs.Text(m, "30px Arial", color);
     fuelText.x = stage.canvas.width-400;
@@ -854,14 +874,14 @@ function updateStats(){
     
     //physics
     physicsText.text = "Velocity (x): " + velocityX.toFixed(2) + " m/s\n\n"
-                     + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n"
-                     + "Rotation: " + rocket.rotation + " degrees\n\n"
-                     + "Altitude: " + (rocket.nextY / PIXELS_PER_METER).toFixed(2) + " m\n\n"
-                     + "Thrust Level: " + thrustLevel + "/4\n\n";
+    + "Velocity (y): " + velocityY.toFixed(2) + " m/s\n\n"
+    + "Rotation: " + rocket.rotation + " degrees\n\n"
+    + "Altitude: " + (altitude / PIXELS_PER_METER).toFixed(2) + " m\n\n"
+    + "Thrust Level: " + thrustLevel + "/4\n\n";
     
     //fuel
     fuelText.text = "Rocket Fuel: " + fuel + " / " + START_FUEL + "\n\n"
-                  + "Monopropellant: " + mono + " / " + START_MONO;
+    + "Monopropellant: " + mono + " / " + START_MONO;
 }
 
 
@@ -912,13 +932,13 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
         animations: {
             noFire: 20,
                 
-                //animations for engine firing continuously
+            //animations for engine firing continuously
             tinyFire: [15,19, "tinyFire", 0.3],
             smallFire: [0,4, "smallFire", 0.3],
             mediumFire: [5,9, "mediumFire", 0.3],
             largeFire: [10,14, "largeFire", 0.3],
                 
-                //animations for engine cutout
+            //animations for engine cutout
             cutTinyFire: [15,19, "noFire", 1.5],
             cutSmallFire: [0,4, "cutTinyFire", 1.5],
             cutMediumFire: [5,9, "cutSmallFire", 1.5],
@@ -948,6 +968,7 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
 //-----------------------------------thrusters-----------------------------------
 
 function updateThrusters(){
+    
     var isThrustingL, isThrustingR;
     
     //flags
@@ -972,7 +993,7 @@ function updateThrusters(){
 }
 
 function cutThrustersAnimation(){
- 
+    
     var isThrustingR, isThrustingL;
     
     //flags
@@ -1003,19 +1024,21 @@ function flareThrusters(){
 
 
 function updateEngine(){
+    
     var engineFiring, child;
     
-    //flag for engine firing
+    //get fire sprite
     child = rocket.getChildByName("fire");
     
-    
+    //flag for engine firing
     engineFiring =  child.currentAnimation === "tinyFire" ||
                     child.currentAnimation === "smallFire" ||
                     child.currentAnimation === "mediumFire" ||
                     child.currentAnimation === "largeFire";
-
+    
     //engine
     if(wKeyDown && !engineFiring){
+        
         engineFiring = true;
         thrustChanged = false;
         child = rocket.getChildByName("fire");
@@ -1039,6 +1062,7 @@ function updateEngine(){
         } //end switch
     } //end if
     else if(wKeyDown && thrustChanged){
+        
         engineFiring = true;
         thrustChanged = false;
         child = rocket.getChildByName("fire");
@@ -1062,6 +1086,7 @@ function updateEngine(){
         } //end switch
     } //end if
     else if(!wKeyDown && engineFiring){
+        
         engineFiring = false;
         
         child = rocket.getChildByName("fire");
@@ -1093,7 +1118,10 @@ function cutEngineAnimation(){
     
     var child, engineFiring;
     
+    //get fire sprite
     child = rocket.getChildByName("fire");
+    
+    //check whether engine is currently firing
     engineFiring =  child.currentAnimation === "tinyFire" ||
                     child.currentAnimation === "smallFire" ||
                     child.currentAnimation === "mediumFire" ||
@@ -1190,6 +1218,8 @@ function engineSmoke(){
     var globalPt, child, engineFiring;
     
     child = rocket.getChildByName("fire");
+    
+    //check if engine is currently firing
     engineFiring =  child.currentAnimation === "tinyFire" ||
                     child.currentAnimation === "smallFire" ||
                     child.currentAnimation === "mediumFire" ||
@@ -1218,7 +1248,7 @@ function engineSmoke(){
 
 
 function buildSmoke(x,y){
-
+    
     var b, image,randomX, randomShift, randomDirection;
     
     randomDirection = Math.random() > 0.5 ? -1 : 1;
@@ -1257,6 +1287,7 @@ function smokeComplete(){
 //=================================================================================//
 
 function buildRect(x, y, width, height, color){
+    
     var rect;
     
     rect = new createjs.Shape();

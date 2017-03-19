@@ -302,11 +302,11 @@ function resetGame(){
 
 function changeLevel(){ //alert("change level");
     
-    
-    level = (level + 1) % 2;
-    resetGame();
-    
-    
+    if(count === 0){
+        level = (level + 1) % 2;
+        count++;
+        resetGame();
+    } 
 }
 
 function increaseThrust(){

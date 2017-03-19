@@ -43,6 +43,7 @@ var count;
 var thrusterPtL, thrusterPtR;
 var tinyPt, smallPt, mediumPt, largePt;
 var eBackground, eSlice, oBackground, oSlice;
+var fuelBar_drawRect, monoBar_drawRect;
 
 
 
@@ -87,10 +88,12 @@ function load(){
 
 function buildGUI(){
     
+    buildBar(790,50,"fuel", "green");
+    buildBar(790,103, "mono", "green");
     buildPausedText("yellow");
     buildGameoverText("yellow");
-    buildPhysicsText("white");
-    buildFuelText("white");
+    buildPhysicsText("black");
+    buildFuelText("black");
     buildHelpText("white");
 }
 
@@ -248,6 +251,7 @@ function run(e){
             //GUI
             updateAltitude();
             updateStats();
+            updateBars();
         }
         else{
             count++;
@@ -872,7 +876,7 @@ function buildFuelText(color){
     m = "Rocket Fuel: " + START_FUEL + " / " + START_FUEL + "\n\n"
     + "Monopropellant: " + START_MONO + " / " + START_MONO;
     
-    fuelText = new createjs.Text(m, "30px Arial", color);
+    fuelText = new createjs.Text(m, "26px Arial", color);
     fuelText.x = stage.canvas.width-400;
     fuelText.y = 50;
     
@@ -889,7 +893,7 @@ function buildHelpText(color){
     helpText = new createjs.Text(m, "24px Arial", color);
     helpText.x = stage.canvas.width-425;
     helpText.y = stage.canvas.height- 40;
-    helpText.alpha = 0.75;
+    helpText.alpha = 0.5;
     
     stage.addChild(helpText);
     stage.update();
@@ -908,6 +912,64 @@ function updateStats(){
     //fuel
     fuelText.text = "Rocket Fuel: " + fuel + " / " + START_FUEL + "\n\n"
     + "Monopropellant: " + mono + " / " + START_MONO;
+}
+
+function buildBar(x,y,type, fillColor){
+    
+    var border, fill;
+    
+    //Container
+    bar = new createjs.Container();
+    bar.x = x;
+    bar.y = y;
+    
+    //Border
+    //Shape
+    border = new createjs.Shape();
+    border.x = border.y = 0;    //relative to container
+    border.name = "name";
+    border.graphics.beginStroke("black").drawRect(0,0,400,30);
+    
+    //Fill
+    //Shape
+    fill = new createjs.Shape();
+    fill.x = fill.y = 0;    //relative to container
+    fill.name = "fill";
+    fill.graphics.endStroke().beginFill(fillColor);
+    fill.graphics.drawRect(0,0,300,30);
+    
+    switch(type){
+        case "fuel":
+            fuelBar_drawRect = fill.graphics.command;  //save reference
+            break;
+        case "mono":
+            monoBar_drawRect = fill.graphics.command;   //save reference
+            break;
+    }
+    
+    //add Shapes to container
+    bar.addChild(fill, border);
+    
+    //add Container to stage
+    stage.addChild(bar);
+    stage.update();
+}
+
+function updateBars(){
+    
+    var width;
+    
+    //rocket fuel
+    //calculate new fill length in pixels per rocket fuel level
+    width = (fuel / START_FUEL) * 400;
+    fuelBar_drawRect.w = width;
+    
+    //monopropellant
+    //calculate new fill length in pixels per monopropellant level
+    width = (mono / START_MONO) * 400;
+    monoBar_drawRect.w = width;
+    
+    stage.update();
 }
 
 

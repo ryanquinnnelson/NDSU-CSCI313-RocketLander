@@ -16,7 +16,7 @@ const W_KEY = 87;
 //additional constants
 const THRUST = 35;  //kN
 const PIXELS_PER_METER = 496 / 52;  //pixel image vs. actual rocket at 52.00 m tall
-const START_FUEL = 500; //starting fuel level
+const START_FUEL = 5000; //starting fuel level
 const START_MONO = 100;  //starting monopropellant level
 const START_VX = 0;     //starting horizontal velocity
 const START_VY = 10;    //starting vertical velocity
@@ -54,7 +54,7 @@ function init(){
     queue = new createjs.LoadQueue(false);
     queue.addEventListener("complete", load);
     queue.loadManifest([
-        {id: "falcon9", src: "Assets/Falcon9.png"},
+        {id: "falcon9", src: "Assets/Falcon9_2.png"},
         {id: "falcon9fire", src: "Assets/Falcon9Fire.png"},
         {id: "falcon9thrusters", src: "Assets/Falcon9Thrusters2.png"},
         {id: "smoke", src: "Assets/Smoke3.png"},

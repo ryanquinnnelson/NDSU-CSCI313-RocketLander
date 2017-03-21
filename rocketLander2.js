@@ -2,6 +2,7 @@
 
 /*
  This game involves the depiction of a SpaceX Falcon 9 rocket.
+ Rocket engine flame animation is smaller than full width of rocket engines to reflect that the real rocket lands using a single engine (center).
  
  */
 //=================================================================================//
@@ -964,7 +965,7 @@ function buildLandingSite(){
     
     //Shape
     landingSite = new createjs.Shape();
-    landingSite.visible = true;
+    landingSite.visible = false;
     
     //createjs properties
     landingSite.graphics.beginFill("green").drawRect(0, 0, stage.canvas.width,10);
@@ -979,12 +980,14 @@ function buildLandingSite(){
     stage.addChild(landingSite);
 }
 
-
+/*
+ Initializes the bitmaps that represent the land site background.
+ */
 function buildEarthBackground(){
     
     var image;
     
-    //earth background first
+    //earth full background first
     //HTML image element
     image = queue.getResult("earth");
     
@@ -997,7 +1000,7 @@ function buildEarthBackground(){
     stage.addChildAt(eBackground, 0);    //bottom child
     
     
-    //slice to hide flames that go into the ground (past 0 altitude)
+    //background slice to hide flames that go into the ground (past 0 altitude)
     image = queue.getResult("earthslice");
     
     //Bitmap
@@ -1005,12 +1008,16 @@ function buildEarthBackground(){
     eSlice.x = eSlice.y = 0;
     eSlice.visible = true;
     
+    //put in front of full background image
     stage.addChild(eSlice);
 }
 
+/*
+ Initializes the bitmaps that represent the ocean site background.
+ */
 function buildOceanBackground(){
     
-    //ocean background first
+    //ocean full background first
     //HTML image element
     image = queue.getResult("ocean");
     
@@ -1023,7 +1030,7 @@ function buildOceanBackground(){
     stage.addChildAt(oBackground, 0);    //bottom child
     
     
-    //slice to hide flames that go into the ground (past 0 altitude)
+    //background slice to hide flames that go into the ground (past 0 altitude)
     image = queue.getResult("oceanslice");
     
     //Bitmap
@@ -1031,6 +1038,7 @@ function buildOceanBackground(){
     oSlice.x = oSlice.y = 0;
     oSlice.visible = false;
     
+    //put in front of full background image
     stage.addChild(oSlice);
 }
 
@@ -1040,6 +1048,9 @@ function buildOceanBackground(){
 //                                       GUI                                       //
 //=================================================================================//
 
+/*
+ Factory method to build and return reference to a CreateJS text object.
+ */
 function buildText(txt, style, color, alignment, x,y, visible, alpha){
     
     var text;
@@ -1056,7 +1067,12 @@ function buildText(txt, style, color, alignment, x,y, visible, alpha){
     return text;
 }
 
-
+/*
+ Changes values of elements in the physicsText and fuelText objects based on game activity.
+ Truncates decimal values to two positions for visual simplicity.
+ Converts altitude to meters.
+ VelocityX and VelocityY are already in m/s.
+ */
 function updateStats(){
     
     //physics
@@ -1071,47 +1087,43 @@ function updateStats(){
     + "Monopropellant: " + mono + " / " + START_MONO;
 }
 
+/*
+ Initializes the Shape object used to visually represent remaining fuel levels.
+ Stores reference to Graphics.Rect graphics command object to animate fuel levels.
+ */
 function buildBar(x,y,type, fillColor){
+
+    var bar;
     
-    var border, fill;
+    //Shape
+    bar = new createjs.Shape();
     
-    //Container
-    bar = new createjs.Container();
+    //createjs properties
     bar.x = x;
     bar.y = y;
     
-    //Border
-    //Shape
-    border = new createjs.Shape();
-    border.x = border.y = 0;    //relative to container
-    border.name = "name";
-    border.graphics.beginStroke("black").drawRect(0,0,400,30);
-    
-    //Fill
-    //Shape
-    fill = new createjs.Shape();
-    fill.x = fill.y = 0;    //relative to container
-    fill.name = "fill";
-    fill.graphics.endStroke().beginFill(fillColor);
-    fill.graphics.drawRect(0,0,300,30);
-    
+    //graphics
+    bar.graphics.beginStroke("black").drawRect(0,0,400,30);
+    bar.graphics.endStroke().beginFill(fillColor).drawRect(0,0,400,30);
+
+    //store reference based on type of bar being initialized
     switch(type){
         case "fuel":
-            fuelBar_drawRect = fill.graphics.command;  //save reference
+            fuelBar_drawRect = bar.graphics.command;  //save reference
             break;
         case "mono":
-            monoBar_drawRect = fill.graphics.command;   //save reference
+            monoBar_drawRect = bar.graphics.command;   //save reference
             break;
     }
     
-    //add Shapes to container
-    bar.addChild(fill, border);
-    
-    //add Container to stage
+    //add Shape to container
     stage.addChild(bar);
     stage.update();
 }
 
+/*
+ Changes width of graphics command object for both fuel bars, based on game activity.
+ */
 function updateBars(){
     
     var width;
@@ -1136,6 +1148,19 @@ function updateBars(){
 //=================================================================================//
 //                                   Animations                                    //
 //=================================================================================//
+/*
+ Constructs generic data objects used to initialize spritesheets, then initializes spritesheets.
+ 
+ Current data object / spritesheets:
+ -  rocket_sheet contains data related to physical rocket (body, grid fins, landing legs)
+ -  fire_sheet contains data related to engine fire of the rocket
+ -  thruster_sheet contains data related to cold-gas thrusters at top of rocket
+ 
+ Animation objects can be initialized in two ways:
+ 1. array with four values: start, end, [next], [speed]
+ 2. generic objects with named properties
+ 
+ */
 function buildSpriteSheets(){ //alert("buildSpriteSheets()");
     
     var image, data;
@@ -1149,22 +1174,23 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
         images: [image],
         frames:{width: 184, height: 861, spacing: 0, count: 27, margin: 0},
         animations: {
-            closedFins: 0,
-            deployFins: [0, 2, "deployedFins", 0.1],    //start, end, [next], [speed]
-            deployedFins: 2,
-            closeFins: {
+            closedFins: 0,                              //fins stay shut
+            deployFins: [0, 2, "deployedFins", 0.1],    //fins extend
+            deployedFins: 2,                            //fins stay open
+            closeFins: {                                //fins close
                 frames: [2,1,0],
                 next: "closedFins",
                 speed: 0.1
             },
-            finsLeft: 3,
-            finsRight: 5,
-            closedLegs: 6,
-            deployLegs: [6,10, "deployedLegs", 0.1],
-            deployedLegs: 10,
+            finsLeft: 3,                                //fins shift left
+            finsRight: 5,                               //fins shift right
+            closedLegs: 6,                              //legs stay closed
+            deployLegs: [6,10, "deployedLegs", 0.1],    //legs extend down
+            deployedLegs: 10,                           //legs stay down
         } //end animations
     }; //end data
     
+    //SpriteSheet object
     rocket_sheet = new createjs.SpriteSheet(data);
     
     
@@ -1177,22 +1203,23 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
         images: [image],
         frames:{width: 50, height: 364, spacing: 0, count: 21, margin: 0},
         animations: {
-            noFire: 20,
+            noFire: 20,                                     //empty frame only
                 
             //animations for engine firing continuously
-            tinyFire: [15,19, "tinyFire", 0.3],
+            tinyFire: [15,19, "tinyFire", 0.3],             //smallest flame
             smallFire: [0,4, "smallFire", 0.3],
             mediumFire: [5,9, "mediumFire", 0.3],
-            largeFire: [10,14, "largeFire", 0.3],
+            largeFire: [10,14, "largeFire", 0.3],           //largest flame
                 
             //animations for engine cutout
-            cutTinyFire: [15,19, "noFire", 1.5],
-            cutSmallFire: [0,4, "cutTinyFire", 1.5],
-            cutMediumFire: [5,9, "cutSmallFire", 1.5],
-            cutLargeFire: [10,14, "cutMediumFire", 1.5]
+            cutTinyFire: [15,19, "noFire", 1.5],            //steps tiny to none
+            cutSmallFire: [0,4, "cutTinyFire", 1.5],        //steps small to tiny
+            cutMediumFire: [5,9, "cutSmallFire", 1.5],      //steps medium to small
+            cutLargeFire: [10,14, "cutMediumFire", 1.5]     //steps large to medium
         } //end animations
     }; //end data
     
+    //SpriteSheet object
     fire_sheet = new createjs.SpriteSheet(data);
     
     //spritesheet for thruster
@@ -1204,16 +1231,70 @@ function buildSpriteSheets(){ //alert("buildSpriteSheets()");
         images: [image],
         frames:{width: 50, height: 75, spacing: 0, count: 6, margin: 0},
         animations: {
-            noThrust: 5,
-            thrust: [0,4, "thrust", 0.3]
+            noThrust: 5,                                    //empty frame only
+            thrust: [0,4, "thrust", 0.3]                    //continuous animation
         } //end animations
     }; //end data
     
+    //SpriteSheet object
     thruster_sheet = new createjs.SpriteSheet(data);
+}//end buildSpriteSheets()
+
+
+
+//-----------------------------------overall-----------------------------------
+
+/*
+ Coordinates all animation functions based on game activity.
+ */
+function updateAnimations(){
+    
+    //thrusters animation
+    if(mono > 0){   //fuel remaining for thrusters
+        updateThrusters();
+        thrusterSmoke();    //add smoke
+    }
+    else{ //no fuel remaining
+        cutThrustersAnimation();
+    }
+    
+    //engine animation
+    if(fuel > 0){   //fuel remaining for engines
+        updateEngine();
+        engineSmoke();  //add smoke
+    }
+    else{ //no fuel remaining
+        cutEngineAnimation();
+    }
+}
+
+/*
+ Coordinates animations regarding a successful rocket landing.
+ */
+function landedAnimations(){
+    
+    cutEngineAnimation();   //engine shuts off
+    flareThrusters();       //thrusters vent remaining gas
+}
+
+/*
+ Coordinates animations regarding a failed rocket landing.
+ */
+function crashAnimations(){
+    
 }
 
 //-----------------------------------thrusters-----------------------------------
 
+/*
+ Performs operations and checks necessary to change thruster animation based on game activity.
+ 
+ Checks first whether rocket is thrusting left or right or both.
+ Changes animation once to reflect this activity.
+ 
+ Flags are used to ensure change is made only once.
+ Otherwise, change is made over and over based on framerate and animation doesn't work.
+ */
 function updateThrusters(){
     
     var isThrustingL, isThrustingR;
@@ -1223,22 +1304,25 @@ function updateThrusters(){
     isThrustingR = rocket.getChildByName("thrusterR").currentAnimation === "thrust";
     
     //left thruster
-    if(aKeyDown && !isThrustingL){
+    if(aKeyDown && !isThrustingL){  //so change is made only once
         rocket.getChildByName("thrusterL").gotoAndPlay("thrust");
     }
-    if(!aKeyDown && isThrustingL){
+    if(!aKeyDown && isThrustingL){ //so change is made only once
         rocket.getChildByName("thrusterL").gotoAndPlay("noThrust");
     }
     
     //right thruster
-    if(dKeyDown && !isThrustingR){
+    if(dKeyDown && !isThrustingR){ //so change is made only once
         rocket.getChildByName("thrusterR").gotoAndPlay("thrust");
     }
-    if(!dKeyDown && isThrustingR){
+    if(!dKeyDown && isThrustingR){ //so change is made only once
         rocket.getChildByName("thrusterR").gotoAndPlay("noThrust");
     }
 }
 
+/*
+ Performs operations and checks to show the thrusters cutting out.
+ */
 function cutThrustersAnimation(){
     
     var isThrustingR, isThrustingL;
@@ -1253,6 +1337,9 @@ function cutThrustersAnimation(){
     }
 }
 
+/*
+ Performs operations and checks to show both thrusters flaring if rocket landed successfully, just as the real rocket would do.
+ */
 function flareThrusters(){
     
     var isThrustingR, isThrustingL;
@@ -1261,15 +1348,21 @@ function flareThrusters(){
     isThrustingL = rocket.getChildByName("thrusterL").currentAnimation === "thrust";
     isThrustingR = rocket.getChildByName("thrusterR").currentAnimation === "thrust";
     
-    if(!isThrustingL && !isThrustingR){
+    if(!isThrustingL){
         rocket.getChildByName("thrusterL").gotoAndPlay("thrust");
+    }
+    if(!isThrustingR){
         rocket.getChildByName("thrusterR").gotoAndPlay("thrust");
     }
 }
 
 //-----------------------------------engine-----------------------------------
 
-
+/*
+ Performs operations and checks to update animation of engine fire based on activity.
+ Flags are used to ensure change is made only once.
+ Otherwise, change is made over and over based on framerate and animation doesn't work.
+ */
 function updateEngine(){
     
     var engineFiring, child;
@@ -1284,35 +1377,10 @@ function updateEngine(){
                     child.currentAnimation === "largeFire";
     
     //engine
-    if(wKeyDown && !engineFiring){
+    if(wKeyDown && !engineFiring){ //if engine wasn't firing before but should be
         
-        engineFiring = true;
-        thrustChanged = false;
-        child = rocket.getChildByName("fire");
-        
-        switch(thrustLevel){
-            case 0:
-                child.gotoAndPlay("noFire");
-                break;
-            case 1:
-                child.gotoAndPlay("tinyFire");
-                break;
-            case 2:
-                child.gotoAndPlay("smallFire");
-                break;
-            case 3:
-                child.gotoAndPlay("mediumFire");
-                break;
-            case 4:
-                child.gotoAndPlay("largeFire");
-                break;
-        } //end switch
-    } //end if
-    else if(wKeyDown && thrustChanged){
-        
-        engineFiring = true;
-        thrustChanged = false;
-        child = rocket.getChildByName("fire");
+        engineFiring = true; //so change is made once
+        thrustChanged = false; //so change is made once
         
         switch(thrustLevel){
             case 0:
@@ -1332,12 +1400,32 @@ function updateEngine(){
                 break;
         } //end switch
     } //end if
-    else if(!wKeyDown && engineFiring){
+    else if(wKeyDown && thrustChanged){ //engine was firing but thrustLevel changed
         
-        engineFiring = false;
+        engineFiring = true; //so change is made once
+        thrustChanged = false; //so change is made once
         
-        child = rocket.getChildByName("fire");
+        switch(thrustLevel){
+            case 0:
+                child.gotoAndPlay("noFire");
+                break;
+            case 1:
+                child.gotoAndPlay("tinyFire");
+                break;
+            case 2:
+                child.gotoAndPlay("smallFire");
+                break;
+            case 3:
+                child.gotoAndPlay("mediumFire");
+                break;
+            case 4:
+                child.gotoAndPlay("largeFire");
+                break;
+        } //end switch
+    } //end if
+    else if(!wKeyDown && engineFiring){ //engine was firing and shouldn't be anymore
         
+        engineFiring = false; //so change is made once
         
         switch(thrustLevel){
             case 0:
@@ -1360,7 +1448,11 @@ function updateEngine(){
     } //end if
 }
 
-
+/*
+ Performs operation and checks to change animation to engine cutout sequence.
+ Flags are used to ensure change is made only once.
+ Otherwise, change is made over and over based on framerate and animation doesn't work.
+ */
 function cutEngineAnimation(){
     
     var child, engineFiring;
@@ -1377,7 +1469,7 @@ function cutEngineAnimation(){
     
     if(engineFiring){
         
-        engineFiring = false; //reset flag
+        engineFiring = false; //ensure change is made once
         
         switch(thrustLevel){
             case 0:
@@ -1395,46 +1487,15 @@ function cutEngineAnimation(){
             case 4:
                 child.gotoAndPlay("cutLargeFire");
                 break;
-        }
-    }
+        } //end switch
+    } //end if
 }
 
-//-----------------------------------overall-----------------------------------
-
-function updateAnimations(){
-    
-    //thrusters animation
-    if(mono > 0){
-        updateThrusters();
-        thrusterSmoke();
-    }
-    else{
-        cutThrustersAnimation();
-    }
-    
-    //engine animation
-    if(fuel > 0){
-        updateEngine();
-        engineSmoke();
-    }
-    else{
-        cutEngineAnimation();
-    }
-    
-    
-}
-
-function landedAnimations(){
-    
-    cutEngineAnimation();
-    flareThrusters();
-}
-
-function crashAnimations(){
-    
-}
 //-----------------------------------smoke-----------------------------------
 
+/*
+ Performs checks and operations needed to locate positions for smoke sprites to be initialized for cold-gas thrusters, then initializes the sprites at these locations.
+ */
 function thrusterSmoke(){
     
     var isThrustingL, isThrustingR, globalPt;
@@ -1447,19 +1508,19 @@ function thrusterSmoke(){
     if(isThrustingR){
         //get current location of tip of right thrust animation
         globalPt = thrusterPtR.localToGlobal(thrusterPtR.x, thrusterPtR.y);
-        //alert(globalPt);
         buildSmoke(globalPt.x, globalPt.y, 1);
-        
     }
     
     if(isThrustingL){
         //get current location of tip of left thrust animation
         globalPt = thrusterPtL.localToGlobal(thrusterPtL.x, thrusterPtL.y);
-        //alert(globalPt);
         buildSmoke(globalPt.x, globalPt.y);
     }
 }
 
+/*
+ Performs checks and operations needed to locate positions for smoke sprites to be initialized for rocket engine, then initializes the sprites at these locations.
+ */
 function engineSmoke(){
     
     var globalPt, child, engineFiring;
@@ -1472,8 +1533,8 @@ function engineSmoke(){
                     child.currentAnimation === "mediumFire" ||
                     child.currentAnimation === "largeFire";
     
-    if(engineFiring){
-        switch(thrustLevel){
+    if(engineFiring){   //engine is firing and smoke should be visible
+        switch(thrustLevel){    //determine coordinates based on thrustLevel
             case 1:
                 globalPt = tinyPt.localToGlobal(tinyPt.x, tinyPt.y);
                 break;
@@ -1493,37 +1554,53 @@ function engineSmoke(){
 }
 
 
-
+/*
+ Constructs a sprite object representing a single puff of smoke. 
+ The object is initialized at a random horizontal location close to given x value, so that smoke appears more realistic.
+ 
+ Sprite is given event listener to trigger movement and eventually fading out.
+ */
 function buildSmoke(x,y){
     
     var b, image,randomX, randomShift, randomDirection;
     
-    randomDirection = Math.random() > 0.5 ? -1 : 1;
+    //calculate random values for use with positioning
+    randomDirection = Math.random() > 0.5 ? -1 : 1; //50% chance either direction
     randomX = Math.floor(Math.random() * 30);
     randomShift = randomX * randomDirection;
     
-    
+    //HTML image object
     image = queue.getResult("smoke");
     
+    //Bitmap object
     b = new createjs.Bitmap(image);
-    b.x = x - b.image.width/2 + randomShift;
-    b.y = y - b.image.height/2;
-    b.alpha = 0.5;
-    b.addEventListener("added", fadeout);
+    b.x = x - b.image.width/2 + randomShift;    //centers sprite horizontally
+    b.y = y - b.image.height/2;                 //centers sprite vertically
+    b.alpha = 0.5;                              //slightly transparent
+    b.addEventListener("added", fadeout);       //triggers when sprite added to stage
     
     stage.addChild(b);
 }
 
-
+/*
+ Performs operations used to fade out a given smoke sprite.
+ Sprites are faded out in a slightly random timing to add to the realism. Timing is not completely random, but within a range of values.
+ */
 function fadeout(e){
     
     var randomMS;
     
-    randomMS = Math.floor(Math.random() * 500);    //0 - 1000
+    //calculate random amount of time to add to standard fadeout time
+    randomMS = Math.floor(Math.random() * 500);    //0 - 500
     
+    //uses tween to fade target while also moving it upward
+    //calls for sprite to be removed after completing this animation
     createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS + 3000).call(smokeComplete);
 }
 
+/*
+ Removes given child from stage.
+ */
 function smokeComplete(){
     
     stage.removeChild(this);
@@ -1533,6 +1610,9 @@ function smokeComplete(){
 //                                      Debug                                      //
 //=================================================================================//
 
+/*
+ Used to visualize x,y coordinates on canvas.
+ */
 function buildRect(x, y, width, height, color){
     
     var rect;

@@ -100,7 +100,7 @@ function init(){
         {id: "falcon9thrusters", src: "Assets/Falcon9Thrusters2.png"},
         {id: "smoke", src: "Assets/Smoke3.png"},
         {id: "ocean", src: "Assets/Ocean.png"},
-        {id: "earth", src: "Assets/Earth.png"},
+        {id: "earth", src: "Assets/Earth2.png"},
         {id: "earthslice", src: "Assets/EarthSlice.png"},
         {id: "oceanslice", src: "Assets/OceanSlice.png"}
     ]);

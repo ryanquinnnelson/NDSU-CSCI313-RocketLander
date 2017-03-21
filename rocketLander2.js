@@ -233,10 +233,9 @@ function resetGameValues(){
             }
 
             //update landingSite Shape
-            landingSite_drawRect.x = 0;
+            landingSite.x = 0;
             landingSite_drawRect.w = stage.canvas.width;
             landingSite.width = stage.canvas.width;
-            alert(landingSite);
             break;
             
         case 1: //ocean background
@@ -245,9 +244,8 @@ function resetGameValues(){
             oBackground.visible = oSlice.visible = true;
             
             //update landingSite Shape
-            landingSite_drawRect.x = 335;
-            landingSite_drawRect.w = 450;
-            landingSite.width = 450;
+            landingSite.x = 335;
+            landingSite_drawRect.w = landingSite.width = 450;
             break;
     }
     
@@ -662,7 +660,7 @@ function detectCollision(pt){
         
         //checks whether proper landing conditions have been met
         landed = correctYRange && correctXRange && correctRotation && correctSpeed;
-        
+ 
         //adjust position to 0 altitude
         pt.y = landingSite.y - shiftY;
         
@@ -967,23 +965,6 @@ function buildLandingSite(){
     //Shape
     landingSite = new createjs.Shape();
     landingSite.visible = true;
-
-    /*
-    switch(level){
-        case 0: //earth
-            x = 0;
-            y = stage.canvas.height - 50;
-            w = stage.canvas.width;
-            h = 10;
-            break;
-        case 1: //ocean
-            x = 335;
-            y = stage.canvas.height - 50;
-            w = 450;
-            h = 10;
-            break;
-    }
-     */
     
     //createjs properties
     landingSite.graphics.beginFill("green").drawRect(0, 0, stage.canvas.width,10);

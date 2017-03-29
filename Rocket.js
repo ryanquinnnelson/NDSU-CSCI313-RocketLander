@@ -320,38 +320,32 @@
      }
  
      r.update = function(){
-         r.updateRotation(this);
-         r.updatePosition(this);
+         this.updateRotation();
+         this.updatePosition();
      }
  
  
      //rotation
-     r.updateRotation = function(target){
+     r.updateRotation = function(){
          var nextAngle;
-         nextAngle = target.rotation + r.torque;
+         nextAngle = this.rotation + r.torque;
          r.nextA = nextAngle;
      }
  
-     r.updatePosition = function(target){
+     r.updatePosition = function(){
          var nextX, nextY, angle, yThrust, xThrust;
          
          //horizontal position
-         nextX = target.x;
-         angle = 90 - target.rotation;
+         nextX = this.x;
+         angle = 90 - this.rotation;
          xThrust = r.calcXThrust(angle);
- 
-         if(Math.abs(xThrust) > 0){
-             nextX += xThrust/10;
-             r.velocityX = xThrust/10;
-         }
-         else{
-             nextX += r.velocityX;
-         }
+         nextX += r.velocityX;
+         r.velocityX = r.velocityX + xThrust/100;
 
  
          //vertical position
-         nextY = target.y;
-         angle = 90 - target.rotation;
+         nextY = this.y;
+         angle = 90 - this.rotation;
          yThrust = r.calcYThrust(angle) * -1;
          nextY += r.velocityY;
          r.velocityY += (0.2 + yThrust/200);
@@ -574,6 +568,19 @@
          } //end switch
      }
  
+     //==========================================================================//
+     //                          Land or Crash Functions                         //
+     //==========================================================================//
+ 
+     r.crashedAnimation = function(){
+         this.visible = false;
+     }
+ 
+     r.landedAnimation = function(){
+         this.cutoutEngine();
+         this.fireLeftThruster();
+         this.fireRightThruster();
+     }
     //==========================================================================//
     //                               Misc Functions                             //
     //==========================================================================//

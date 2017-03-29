@@ -92,6 +92,7 @@ function detectKey(e){ //alert("detectKey()");
             break;
         case S_KEY:
             //sKeyDown = true;    //flag for movement
+            rocket.landedAnimation();
             break;
         case A_KEY:
             rocket.fireLeftThruster();
@@ -227,7 +228,7 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
 
 function build_Rocket(){
     
-    const START_Y = 300;    //-150
+    const START_Y = -150;    //-150
     var randomX, randomAngle, shiftX, startY;
     
     //calculate position and angle values needed for rocket initialization

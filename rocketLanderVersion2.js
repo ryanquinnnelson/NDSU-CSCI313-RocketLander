@@ -1,3 +1,15 @@
+//CONSTANTS
+//integers represent the keycode of certain keys on the keyboard
+const SPACEBAR = 32;
+const LEFT_ARROW = 37;
+const UP_ARROW = 38;
+const RIGHT_ARROW = 39;
+const DOWN_ARROW = 40;
+const A_KEY = 65;
+const D_KEY = 68;
+const S_KEY = 83;
+const W_KEY = 87;
+
 var rocket_sheet, fire_sheet, thruster_sheet, stage, queue, rocket;
 
 function load(){
@@ -33,9 +45,78 @@ function loadGame(){ //alert("loadGame()");
 }
 
 function startGame(){
+    //Ticker object
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener("tick", stage);
+    
+    //listen for key / mouse events
+    window.onkeydown  = detectKey;  //calls detectKey() for "keydown" event
+    window.onkeyup = removeKey;     //calls removeKey() for "keyup" event
+}
 
+//=================================================================================//
+//                                 Game Controls                                   //
+//=================================================================================//
+
+/*
+ Changes flags for movement control based on keyboard input.
+ Calls certain methods for other keyboard input.
+ */
+function detectKey(e){ //alert("detectKey()");
+    
+    //type check for known browser issues
+    e = !e ? window.event : e; //if event is not event, get window.event;
+    
+    switch(e.keyCode) {
+        case W_KEY:
+            //wKeyDown = true;    //flag for movement
+            break;
+        case S_KEY:
+            //sKeyDown = true;    //flag for movement
+            break;
+        case A_KEY:
+            rocket.fireLeftThruster();
+            break;
+        case D_KEY:
+            //rocket.thrustRight();
+            break;
+        case UP_ARROW:
+            rocket.increaseThrustLevel();
+            break;
+        case DOWN_ARROW:
+            rocket.decreaseThrustLevel();
+            break;
+        case RIGHT_ARROW:
+            //changeLevel();      //changes game level
+            break;
+        case SPACEBAR:
+            //pause();            //pauses the game
+            break;
+    }
+}
+
+/*
+ Changes flags for movemenet control based on keyboard input.
+ */
+function removeKey(e){ //alert("removeKey()");
+    
+    //type check for known browser issues
+    e = !e ? window.event : e;  //if event is not event, get window.event;
+    
+    switch(e.keyCode) {
+        case W_KEY:
+            //wKeyDown = false;    //flag for movement
+            break;
+        case S_KEY:
+            //sKeyDown = false;    //flag for movement
+            break;
+        case A_KEY:
+            rocket.cutoutLeftThruster();
+            break;
+        case D_KEY:
+            //dKeyDown = false;    //flag for movement
+            break;
+    }
 }
 
 

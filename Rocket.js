@@ -329,13 +329,33 @@
          isThrusting = child.currentAnimation === "thrust";
          
          //left thruster
-         if(!isThrusting){  //so change is made only once
+         if(!isThrusting && r.mono > 0){  //so change is made only once
              child.gotoAndPlay("thrust");
          }
-         if(isThrusting){ //so change is made only once
+
+         //affect movement manager to turn the rocket
+         r.velocityA += 1;
+ 
+         //run other functions added to this event
+         for(i = 0; i < r.onLeftThrusterFiring.length; i++){
+             r.onLeftThrusterFiring[i](); //call function stored
+         }
+     }
+ 
+     r.cutoutLeftThruster = function(){
+         //update animation
+         var isThrusting, child;
+         
+         child = this.getChildByName("thrusterL");
+         
+         //flags
+         isThrusting = child.currentAnimation === "thrust";
+         
+         //left thruster
+         if(isThrusting){  //so change is made only once
              child.gotoAndPlay("noThrust");
          }
-
+         
          //affect movement manager to turn the rocket
      }
  

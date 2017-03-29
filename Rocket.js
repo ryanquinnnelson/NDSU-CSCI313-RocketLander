@@ -33,6 +33,8 @@
      //extend Container and return prototype of new class
      var r = createjs.extend(Rocket, createjs.Container);
  
+     //promote overridden attributes and add new class to namespace
+     window.objects.Rocket = createjs.promote(Rocket, "Container");
  
  
      //inject attributes (properties and methods)
@@ -63,8 +65,9 @@
  
      //event listeners
      r.onThrustLevelChanged = [];    //store functions to call
-     r.onThrustersFiring = [];  //store functions to call
-     r.onEngineFiring = []; //store functions to call
+     r.onLeftThrusterFiring = [];
+     r.onRightThrusterFiring = [];
+     r.onEngineFiring = [];
  
  
  
@@ -278,7 +281,7 @@
              r.fuel = 0;
          }
      }
-  }
+ 
      //==========================================================================//
      //                             Movement Functions                           //
      //==========================================================================//
@@ -289,31 +292,38 @@
          this.rotation = angle;
      }
  
+     //==========================================================================//
+     //                             Listener Functions                           //
+     //==========================================================================//
+     //add function definition to a particular Rocket event
+     r.addToListener = function(event, func){
+         switch(event){
+             case "thrustLevelChanged":
+                 r.onThrustLevelChange.push(func);
+                 break;
+             case "leftThrusterFiring":
+                 r.onLeftThrusterFiring.push(func);
+                 break;
+             case "rightThrusterFiring":
+                 r.onRightThrusterFiring.push(func);
+                 break;
+             case "engineFiring":
+                 r.onEngineFiring.push(func);
+                 break;
+             case "leftThrusterCutout":
+                 break;
+             case "rightThrusterCutout":
+                 break;
+             case "engineCutout":
+                 break;
+         }
+     }
  
- 
- /*
-    r.thrustLeft = function(){
-        var isThrusting, child;
-
-        child = this.getChildByName("thrusterL");
-
-        //flags
-        isThrusting = child.currentAnimation === "thrust";
-
-        //left thruster
-        if(!isThrusting){  //so change is made only once
-            child.gotoAndPlay("thrust");
-            r.thrustersFiring();
-        }
-        if(isThrusting){ //so change is made only once
-            child.gotoAndPlay("noThrust");
-        }
-    }
- 
-     r.thrustRight = function(){
+     r.fireLeftThruster = function(){
+         //update animation
          var isThrusting, child;
          
-         child = this.getChildByName("thrusterR");
+         child = this.getChildByName("thrusterL");
          
          //flags
          isThrusting = child.currentAnimation === "thrust";
@@ -325,95 +335,12 @@
          if(isThrusting){ //so change is made only once
              child.gotoAndPlay("noThrust");
          }
+
+         //affect movement manager to turn the rocket
      }
- 
- 
-     //==========================================================================//
-     //                             Listener Functions                           //
-     //==========================================================================//
-     //add function definition to a particular Rocket event
-     r.addToListener = function(event, func){
-         switch(event){
-             case "thrustLevelChanged":
-                 r.onThrustLevelChange.push(func);
-                 break;
-             case "thrusterFiring":
-                 r.onThrustersFiring.push(func);
-                 break;
-             case "engineFiring":
-                 r.onEngineFiring.push(func);
-                 break;
-         }
-     }
- 
-     r.thrustersFiring = function(){
-         for(i = 0; i < r.onThrustersFiring.length; i++){
-             r.onThrustersFiring[i](); //call function stored
-         }
-     }
- 
-     r.engineFiring = function(){
-         for(i = 0; i < r.onEngineFiring.length; i++){
-             r.onEngineFiring[i](); //call function stored
-         }
-     }
- 
- 
-     //events
-     r.thrustLevelChanged = function(){
- 
-         var i;
-         r.updateFireAnimation();
- 
- 
-         //to call other functions stored with listener
-         for(i = 0; i < r.onThrustLevelChange.length; i++){
-             r.onThrustLevelChange[i](); //call function stored
-         }//end for
-     }//end r.thrustChanged
- 
- 
  
 
  
  
- //==========================================================================//
- //                         Rocket Animation Functions                       //
- //==========================================================================//
- 
- r.updateFireAnimation = function(){
- var child, engineFiring;
- 
- child = this.getChildByName("fire");
- //flag for engine firing
- engineFiring =  child.currentAnimation === "tinyFire" ||
- child.currentAnimation === "smallFire" ||
- child.currentAnimation === "mediumFire" ||
- child.currentAnimation === "largeFire";
- 
- if(engineFiring){
- 
- }switch(r.thrustLevel){
- case 0:
- child.gotoAndPlay("noFire");
- break;
- case 1:
- child.gotoAndPlay("tinyFire");
- break;
- case 2:
- child.gotoAndPlay("smallFire");
- break;
- case 3:
- child.gotoAndPlay("mediumFire");
- break;
- case 4:
- child.gotoAndPlay("largeFire");
- break;
- } //end switch
-
-  */
- 
-     //promote overridden attributes and add new class to namespace
-     window.objects.Rocket = createjs.promote(Rocket, "Container");
  
  }());

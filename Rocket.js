@@ -3,10 +3,10 @@
 (function () {
  
      //constants
-     const THRUST_MAX = 35;       //force rocket generates at full power, in kN
-     const TORQUE = 5;        //torque
-     const START_FUEL = 500;  //starting rocket fuel level for each attempt
-     const START_MONO = 100;  //starting monopropellant level for each attempt
+     const THRUST_MAX = 100;       //force rocket generates at full power, in kN
+     const TORQUE = 1;        //torque
+     const START_FUEL = 5000;  //starting rocket fuel level for each attempt
+     const START_MONO = 1000;  //starting monopropellant level for each attempt
      const START_VX = 0;      //starting horizontal velocity for each attempt
      const START_VY = 10;     //starting vertical velocity for each attempt
      const START_VA = 0;      //starting angular velocity for each attempt
@@ -48,11 +48,13 @@
      r.center_of_mass = 351;
      r.height = 496;
      r.landingHeight = 529;
+     r.centerToExtendedLegs = 328;
  
      //position
      r.nextX = 0;
      r.nextY = 0;
      r.nextA = 0;
+     r.altitude = 0;
  
      //fuel
      r.fuel = START_FUEL;
@@ -78,7 +80,7 @@
  
  
      //==========================================================================//
-     //                                Child Functions                           //
+     //                                Child Creation                            //
      //==========================================================================//
  
      //children
@@ -296,6 +298,15 @@
      r.getThrust = function(){
          return r.thrust;
      }
+ 
+     //altitude
+     r.getAltitude = function(){
+        return r.altitude;
+     }
+ 
+     r.setAltitude = function(n){
+         r.altitude = n;
+     }
 
  
      //==========================================================================//
@@ -306,6 +317,65 @@
          this.x = x;
          this.y = y;
          this.rotation = angle;
+     }
+ 
+     r.update = function(){
+         r.updateRotation(this);
+         r.updatePosition(this);
+     }
+ 
+ 
+     //rotation
+     r.updateRotation = function(target){
+         var nextAngle;
+         nextAngle = target.rotation + r.torque;
+         r.nextA = nextAngle;
+     }
+ 
+     r.updatePosition = function(target){
+         var nextX, nextY, angle, yThrust, xThrust;
+         
+         //horizontal position
+         nextX = target.x;
+         angle = 90 - target.rotation;
+         xThrust = r.calcXThrust(angle);
+ 
+         if(Math.abs(xThrust) > 0){
+             nextX += xThrust/10;
+             r.velocityX = xThrust/10;
+         }
+         else{
+             nextX += r.velocityX;
+         }
+
+ 
+         //vertical position
+         nextY = target.y;
+         angle = 90 - target.rotation;
+         yThrust = r.calcYThrust(angle) * -1;
+         nextY += r.velocityY;
+         r.velocityY += (0.2 + yThrust/200);
+ 
+         r.nextX = nextX;
+         r.nextY = nextY;
+     }
+ 
+     r.calcXThrust = function(d){
+         return r.thrust * Math.cos(r.degreesToRadians(d));
+     }
+ 
+     r.calcYThrust = function(d){
+         return r.thrust * Math.sin(r.degreesToRadians(d));
+     }
+ 
+     r.degreesToRadians = function(d){
+         return d * Math.PI / 180;
+     }
+ 
+     r.render = function(){
+         this.x = r.nextX;
+         this.y = r.nextY;
+         this.rotation = r.nextA;
      }
  
      //==========================================================================//
@@ -332,6 +402,10 @@
          }
      }
  
+     //==========================================================================//
+     //                             Thruster Functions                           //
+     //==========================================================================//
+ 
      //thrusters
      r.fireLeftThruster = function(){
          //update animation
@@ -344,6 +418,9 @@
              child.gotoAndPlay("thrust");
              r.torque += TORQUE;
          }
+ 
+         //reduce remaining monopropellant
+         r.decreaseMono();
  
  
          //run other functions added to this event
@@ -363,7 +440,10 @@
              child.gotoAndPlay("thrust");
              r.torque -= TORQUE;
          }
-         
+ 
+         //reduce remaining monopropellant
+         r.decreaseMono();
+ 
          
          //run other functions added to this event
          for(i = 0; i < r.onRightThrusterFiring.length; i++){
@@ -399,22 +479,34 @@
          }
      }
  
+     //==========================================================================//
+     //                              Engine Functions                            //
+     //==========================================================================//
+ 
      //engine
      r.fireEngine = function(){
          var child, isFiring;
      
          child = this.getChildByName("fire");
-         isFiring =  r.engineIsFiring(child);
+         isFiring =  r.isEngineFiring(child);
  
-         if(!isFiring){
+         if(!isFiring && r.fuel > 0){
              r.setFiringAnimation(r.engineLevel, child);  //set animation
              r.thrust = THRUST_MAX * (r.engineLevel/4); //set thrust
          }
-         else if(r.engineLevelChanged){
+         else if(r.engineLevelChanged && r.fuel > 0){
  
              r.engineLevelChanged = false;    //change once
              r.setFiringAnimation(r.engineLevel, child);  //set animation
              r.thrust = THRUST_MAX * (r.engineLevel/4); //set thrust
+         }
+ 
+         //reduce fuel remaining
+         r.decreaseFuel();
+ 
+         //run other functions added to this event
+         for(i = 0; i < r.onEngineFiring.length; i++){
+             r.onEngineFiring[i](); //call function stored
          }
      }
  
@@ -422,7 +514,7 @@
          var child, isFiring;
          
          child = this.getChildByName("fire");
-         isFiring =  r.engineIsFiring(child);
+         isFiring =  r.isEngineFiring(child);
          
          if(isFiring){
              r.setCutoutAnimation(r.engineLevel, child);
@@ -430,7 +522,7 @@
          }
      }
  
-     r.engineIsFiring = function(child){
+     r.isEngineFiring = function(child){
          
          //flag
          isFiring =  child.currentAnimation === "tinyFire"   ||
@@ -482,9 +574,9 @@
          } //end switch
      }
  
- //==========================================================================//
-     //                               Misc Functions                             //
-     //==========================================================================//
+    //==========================================================================//
+    //                               Misc Functions                             //
+    //==========================================================================//
  
      r.toString = function(){
  
@@ -497,7 +589,7 @@
          child.currentAnimation === "largeFire";
          var s;
  
-         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nCount: " + r.count;
+         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nCount: " + r.count + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nAltitude: " + r.altitude + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY;
  
          return s;
      }

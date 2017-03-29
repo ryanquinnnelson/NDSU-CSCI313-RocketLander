@@ -59,9 +59,14 @@ function startGame(){
 function gameStep(e){
     if(!createjs.Ticker.paused){
         
+        rocket.update();
+        rocket.render();
         diagText.text = rocket.toString() +"\n\nW Key Down: " + wKeyDown;
-        if(wKeyDown){
+        if(wKeyDown && rocket.getFuel() > 0){
             rocket.fireEngine();
+        }
+        else if(wKeyDown && rocket.getFuel() === 0){
+            rocket.cutoutEngine();
         }
 
         stage.update();

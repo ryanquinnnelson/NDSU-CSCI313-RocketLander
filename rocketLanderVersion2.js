@@ -10,7 +10,8 @@ const D_KEY = 68;
 const S_KEY = 83;
 const W_KEY = 87;
 
-var rocket_sheet, fire_sheet, thruster_sheet, stage, queue, rocket;
+var rocket_sheet, fire_sheet, thruster_sheet, stage, queue, rocket, diagText;
+var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
 
 function load(){
     queue = new createjs.LoadQueue(false);
@@ -38,7 +39,8 @@ function loadGame(){ //alert("loadGame()");
     stage = new createjs.Stage("canvas");
     build_SpriteSheets();
     build_Rocket();
-    //build_Rect(0,0, 300, 300, "red");
+    //build_Rect(0,0, 300, 300, "red"); //debug
+    build_Text();   //debug
     
     stage.addChild(rocket);
     stage.update();
@@ -47,11 +49,23 @@ function loadGame(){ //alert("loadGame()");
 function startGame(){
     //Ticker object
     createjs.Ticker.framerate = 60;
-    createjs.Ticker.addEventListener("tick", stage);
+    createjs.Ticker.addEventListener("tick", gameStep);
     
     //listen for key / mouse events
     window.onkeydown  = detectKey;  //calls detectKey() for "keydown" event
     window.onkeyup = removeKey;     //calls removeKey() for "keyup" event
+}
+
+function gameStep(e){
+    if(!createjs.Ticker.paused){
+        
+        diagText.text = rocket.toString() +"\n\nW Key Down: " + wKeyDown;
+        if(wKeyDown){
+            rocket.fireEngine();
+        }
+
+        stage.update();
+    }
 }
 
 //=================================================================================//
@@ -69,7 +83,7 @@ function detectKey(e){ //alert("detectKey()");
     
     switch(e.keyCode) {
         case W_KEY:
-            //wKeyDown = true;    //flag for movement
+            wKeyDown = true;
             break;
         case S_KEY:
             //sKeyDown = true;    //flag for movement
@@ -78,13 +92,13 @@ function detectKey(e){ //alert("detectKey()");
             rocket.fireLeftThruster();
             break;
         case D_KEY:
-            //rocket.thrustRight();
+            rocket.fireRightThruster();
             break;
         case UP_ARROW:
-            rocket.increaseThrustLevel();
+            rocket.increaseEngineLevel();
             break;
         case DOWN_ARROW:
-            rocket.decreaseThrustLevel();
+            rocket.decreaseEngineLevel();
             break;
         case RIGHT_ARROW:
             //changeLevel();      //changes game level
@@ -105,7 +119,8 @@ function removeKey(e){ //alert("removeKey()");
     
     switch(e.keyCode) {
         case W_KEY:
-            //wKeyDown = false;    //flag for movement
+            wKeyDown = false;    //flag for movement
+            rocket.cutoutEngine();
             break;
         case S_KEY:
             //sKeyDown = false;    //flag for movement
@@ -114,7 +129,7 @@ function removeKey(e){ //alert("removeKey()");
             rocket.cutoutLeftThruster();
             break;
         case D_KEY:
-            //dKeyDown = false;    //flag for movement
+            rocket.cutoutRightThruster();
             break;
     }
 }
@@ -241,6 +256,15 @@ function build_Rect(x, y, width, height, color){
 
 function callAlert(){
     alert("callAlert");
+}
+
+function build_Text(){
+    diagText = new createjs.Text("", "20px Arial", "white");
+    diagText.x = 50;
+    diagText.y = 700;
+    
+    stage.addChild(diagText);
+    stage.update();
 }
 
 

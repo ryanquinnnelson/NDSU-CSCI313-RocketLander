@@ -3,7 +3,8 @@
 (function () {
  
      //constants
-     const THRUST = 35;       //force rocket generates at full power, in kN
+     const THRUST_MAX = 35;       //force rocket generates at full power, in kN
+     const TORQUE = 5;        //torque
      const START_FUEL = 500;  //starting rocket fuel level for each attempt
      const START_MONO = 100;  //starting monopropellant level for each attempt
      const START_VX = 0;      //starting horizontal velocity for each attempt
@@ -56,7 +57,12 @@
      //fuel
      r.fuel = START_FUEL;
      r.mono = START_MONO;
-     r.thrustLevel = 0;
+     r.engineLevel = 0;
+     r.engineLevelChanged = false;
+ 
+     //forces
+     r.torque = 0;  //torque currently being applied on rocket
+     r.thrust = 0;
  
      //velocity
      r.velocityX = START_VX;
@@ -64,11 +70,11 @@
      r.velocityA = START_VA;
  
      //event listeners
-     r.onThrustLevelChanged = [];    //store functions to call
-     r.onLeftThrusterFiring = [];
+     r.onLeftThrusterFiring = []; //store functions to call
      r.onRightThrusterFiring = [];
      r.onEngineFiring = [];
  
+     r.count = 0;
  
  
      //==========================================================================//
@@ -224,29 +230,29 @@
          r.velocityY = vY;
      }
  
-     //thrustLevel
-     r.getThrustLevel = function(){
+     //engineLevel
+     r.getEngineLevel = function(){
         return r.thrustLevel;
      }
      
-     r.setThrustLevel = function(n){
+     r.setEngineLevel = function(n){
      
          if(n <= 4 && n >= 0){
-             r.thrustLevel = n;
+             r.engineLevel = n;
          }
      }
  
-     r.increaseThrustLevel = function(){
-         if(r.thrustLevel < 4){    //can't exceed 4
-             r.thrustLevel++;
-             this.thrustLevelChanged();
+     r.increaseEngineLevel = function(){
+         if(r.engineLevel < 4){    //can't exceed 4
+             r.engineLevel++;
+             r.engineLevelChanged = true;
          }
      }
      
-     r.decreaseThrustLevel = function(){
-         if(r.thrustLevel > 0){    //can't be lower than 0
-             r.thrustLevel--;
-             this.thrustLevelChanged();
+     r.decreaseEngineLevel = function(){
+         if(r.engineLevel > 0){    //can't be lower than 0
+             r.engineLevel--;
+             r.engineLevelChanged = true;
          }
      }
  
@@ -275,12 +281,22 @@
      
      r.decreaseFuel = function(){
          if(r.fuel > 0){   //fuel remaining
-             r.fuel -= r.thrustLevel;
+             r.fuel -= r.engineLevel;
          }
          if(r.fuel < 0){   //to reset value if high thrust level brought fuel below 0
              r.fuel = 0;
          }
      }
+ 
+    //forces
+     r.getTorque = function(){
+         return r.torque;
+     }
+     
+     r.getThrust = function(){
+         return r.thrust;
+     }
+
  
      //==========================================================================//
      //                             Movement Functions                           //
@@ -298,9 +314,6 @@
      //add function definition to a particular Rocket event
      r.addToListener = function(event, func){
          switch(event){
-             case "thrustLevelChanged":
-                 r.onThrustLevelChange.push(func);
-                 break;
              case "leftThrusterFiring":
                  r.onLeftThrusterFiring.push(func);
                  break;
@@ -319,22 +332,19 @@
          }
      }
  
+     //thrusters
      r.fireLeftThruster = function(){
          //update animation
          var isThrusting, child;
          
          child = this.getChildByName("thrusterL");
-         
-         //flags
          isThrusting = child.currentAnimation === "thrust";
-         
-         //left thruster
+ 
          if(!isThrusting && r.mono > 0){  //so change is made only once
              child.gotoAndPlay("thrust");
+             r.torque += TORQUE;
          }
-
-         //affect movement manager to turn the rocket
-         r.velocityA += 1;
+ 
  
          //run other functions added to this event
          for(i = 0; i < r.onLeftThrusterFiring.length; i++){
@@ -342,25 +352,154 @@
          }
      }
  
-     r.cutoutLeftThruster = function(){
+     r.fireRightThruster = function(){
          //update animation
          var isThrusting, child;
          
-         child = this.getChildByName("thrusterL");
+         child = this.getChildByName("thrusterR");
+         isThrusting = child.currentAnimation === "thrust";
          
-         //flags
+         if(!isThrusting && r.mono > 0){  //so change is made only once
+             child.gotoAndPlay("thrust");
+             r.torque -= TORQUE;
+         }
+         
+         
+         //run other functions added to this event
+         for(i = 0; i < r.onRightThrusterFiring.length; i++){
+             r.onRightThrusterFiring[i](); //call function stored
+         }
+     }
+ 
+     r.cutoutLeftThruster = function(){
+         //update animation
+         var isThrusting, child;
+ 
+         child = this.getChildByName("thrusterL");
          isThrusting = child.currentAnimation === "thrust";
          
          //left thruster
          if(isThrusting){  //so change is made only once
              child.gotoAndPlay("noThrust");
+             r.torque -= TORQUE;
          }
-         
-         //affect movement manager to turn the rocket
      }
  
-
+     r.cutoutRightThruster = function(){
+         //update animation
+         var isThrusting, child;
+         
+         child = this.getChildByName("thrusterR");
+         isThrusting = child.currentAnimation === "thrust";
+         
+         //left thruster
+         if(isThrusting){  //so change is made only once
+             child.gotoAndPlay("noThrust"); //set animation
+             r.torque += TORQUE;    //set torque
+         }
+     }
  
+     //engine
+     r.fireEngine = function(){
+         var child, isFiring;
+     
+         child = this.getChildByName("fire");
+         isFiring =  r.engineIsFiring(child);
  
+         if(!isFiring){
+             r.setFiringAnimation(r.engineLevel, child);  //set animation
+             r.thrust = THRUST_MAX * (r.engineLevel/4); //set thrust
+         }
+         else if(r.engineLevelChanged){
+ 
+             r.engineLevelChanged = false;    //change once
+             r.setFiringAnimation(r.engineLevel, child);  //set animation
+             r.thrust = THRUST_MAX * (r.engineLevel/4); //set thrust
+         }
+     }
+ 
+     r.cutoutEngine = function(){
+         var child, isFiring;
+         
+         child = this.getChildByName("fire");
+         isFiring =  r.engineIsFiring(child);
+         
+         if(isFiring){
+             r.setCutoutAnimation(r.engineLevel, child);
+             r.thrust = 0;
+         }
+     }
+ 
+     r.engineIsFiring = function(child){
+         
+         //flag
+         isFiring =  child.currentAnimation === "tinyFire"   ||
+                     child.currentAnimation === "smallFire"  ||
+                     child.currentAnimation === "mediumFire" ||
+                     child.currentAnimation === "largeFire";
+ 
+         return isFiring;
+     }
+ 
+     r.setFiringAnimation = function(level, child){
+ 
+         switch(level){
+             case 0:
+                 child.gotoAndPlay("noFire");
+                 break;
+             case 1:
+                 child.gotoAndPlay("tinyFire");
+                 break;
+             case 2:
+                 child.gotoAndPlay("smallFire");
+                 break;
+             case 3:
+                 child.gotoAndPlay("mediumFire");
+                 break;
+             case 4:
+                 child.gotoAndPlay("largeFire");
+                 break;
+         } //end switch
+     }
+ 
+     r.setCutoutAnimation = function(level, child){
+         switch(level){
+             case 0:
+                 child.gotoAndPlay("noFire");
+                 break;
+             case 1:
+                 child.gotoAndPlay("cutTinyFire");
+                 break;
+             case 2:
+                 child.gotoAndPlay("cutSmallFire");
+                 break;
+             case 3:
+                 child.gotoAndPlay("cutMediumFire");
+                 break;
+             case 4:
+                 child.gotoAndPlay("cutLargeFire");
+                 break;
+         } //end switch
+     }
+ 
+ //==========================================================================//
+     //                               Misc Functions                             //
+     //==========================================================================//
+ 
+     r.toString = function(){
+ 
+         var child = this.getChildByName("fire");
+         
+         //flag
+         isFiring =  child.currentAnimation === "tinyFire"   ||
+         child.currentAnimation === "smallFire"  ||
+         child.currentAnimation === "mediumFire" ||
+         child.currentAnimation === "largeFire";
+         var s;
+ 
+         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nCount: " + r.count;
+ 
+         return s;
+     }
  
  }());

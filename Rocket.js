@@ -214,6 +214,7 @@
      //==========================================================================//
      //                          Rocket Property Functions                       //
      //==========================================================================//
+ 
      //velocity
      r.getVX = function(){
          return r.velocityX;
@@ -230,6 +231,7 @@
      r.setVY = function(vY){
          r.velocityY = vY;
      }
+  
  
      //engineLevel
      r.getEngineLevel = function(){

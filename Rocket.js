@@ -54,8 +54,7 @@
      r.nextX = 0;
      r.nextY = 0;
      r.nextA = 0;
-     r.altitude = 0;
- 
+
      //fuel
      r.fuel = START_FUEL;
      r.mono = START_MONO;
@@ -282,6 +281,7 @@
      }
      
      r.decreaseFuel = function(){
+ 
          if(r.fuel > 0){   //fuel remaining
              r.fuel -= r.engineLevel;
          }
@@ -297,15 +297,6 @@
      
      r.getThrust = function(){
          return r.thrust;
-     }
- 
-     //altitude
-     r.getAltitude = function(){
-        return r.altitude;
-     }
- 
-     r.setAltitude = function(n){
-         r.altitude = n;
      }
 
  
@@ -412,6 +403,10 @@
              child.gotoAndPlay("thrust");
              r.torque += TORQUE;
          }
+         else if(isThrusting && r.mono <= 0){
+             child.gotoAndPlay("noThrust");
+             r.torque = 0;
+         }
  
          //reduce remaining monopropellant
          r.decreaseMono();
@@ -433,6 +428,10 @@
          if(!isThrusting && r.mono > 0){  //so change is made only once
              child.gotoAndPlay("thrust");
              r.torque -= TORQUE;
+         }
+         else if(isThrusting && r.mono <= 0){
+             child.gotoAndPlay("noThrust");
+             r.torque = 0;
          }
  
          //reduce remaining monopropellant
@@ -487,6 +486,10 @@
          if(!isFiring && r.fuel > 0){
              r.setFiringAnimation(r.engineLevel, child);  //set animation
              r.thrust = THRUST_MAX * (r.engineLevel/4); //set thrust
+         }
+         else if(isFiring && r.fuel <= 0){
+             r.setCutoutAnimation(r.engineLevel, child);
+             r.thrust = 0;
          }
          else if(r.engineLevelChanged && r.fuel > 0){
  
@@ -596,7 +599,7 @@
          child.currentAnimation === "largeFire";
          var s;
  
-         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nCount: " + r.count + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nAltitude: " + r.altitude + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY;
+         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nCount: " + r.count + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY;
  
          return s;
      }

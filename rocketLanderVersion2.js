@@ -10,7 +10,11 @@ const D_KEY = 68;
 const S_KEY = 83;
 const W_KEY = 87;
 
-var rocket_sheet, fire_sheet, thruster_sheet, stage, queue, rocket, diagText;
+var rocket_sheet, fire_sheet, thruster_sheet;
+var stage, queue, rocket, landingSite;
+var diagText;
+
+
 var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
 
 function load(){
@@ -43,7 +47,6 @@ function loadGame(){ //alert("loadGame()");
     build_Text();   //debug
     
     stage.addChild(rocket);
-    stage.update();
 }
 
 function startGame(){
@@ -59,18 +62,28 @@ function startGame(){
 function gameStep(e){
     if(!createjs.Ticker.paused){
         
-        rocket.update();
-        rocket.render();
-        diagText.text = rocket.toString() +"\n\nW Key Down: " + wKeyDown;
-        if(wKeyDown && rocket.getFuel() > 0){
-            rocket.fireEngine();
-        }
-        else if(wKeyDown && rocket.getFuel() === 0){
-            rocket.cutoutEngine();
-        }
-
+        gameUpdate();
+        gameRender();
         stage.update();
     }
+}
+
+function gameUpdate(){
+    rocket.update();
+    diagText.text = rocket.toString() +"\n\nW Key Down: " + wKeyDown;
+    if(wKeyDown){
+        rocket.fireEngine();
+    }
+    
+
+}
+
+function gameRender(){
+    rocket.render();
+}
+
+function pause(){
+    createjs.Ticker.paused = !createjs.Ticker.paused;
 }
 
 //=================================================================================//
@@ -110,7 +123,7 @@ function detectKey(e){ //alert("detectKey()");
             //changeLevel();      //changes game level
             break;
         case SPACEBAR:
-            //pause();            //pauses the game
+            pause();            //pauses the game
             break;
     }
 }

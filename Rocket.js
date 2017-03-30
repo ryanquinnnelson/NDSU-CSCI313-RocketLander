@@ -23,12 +23,14 @@
         this.regY = r.center_of_mass;
         this.name = "rocket";
 
-         this.buildBody(rocket_sheet);
-         this.buildLegs(rocket_sheet);
-         this.buildFire(fire_sheet);
-         this.buildThrusters(thruster_sheet);
-         this.buildFirePts();
-         this.buildThrusterPts();
+        this.buildBody(rocket_sheet);
+        this.buildLegs(rocket_sheet);
+        this.buildFire(fire_sheet);
+        this.buildThrusters(thruster_sheet);
+        this.buildFirePts();
+        this.buildThrusterPts();
+
+        this.visible = true;
     }
  
      //extend Container and return prototype of new class
@@ -75,7 +77,7 @@
      r.onRightThrusterFiring = [];
      r.onEngineFiring = [];
  
-     r.count = 0;
+
  
  
      //==========================================================================//
@@ -300,7 +302,34 @@
      }
 
  
-     //==========================================================================//
+     r.resetValues = function(){
+         //position
+         r.nextX = 0;
+         r.nextY = 0;
+         r.nextA = 0;
+         
+         //fuel
+         r.fuel = START_FUEL;
+         r.mono = START_MONO;
+         r.engineLevel = 0;
+         r.engineLevelChanged = false;
+         
+         //forces
+         r.torque = 0;  //torque currently being applied on rocket
+         r.thrust = 0;
+         
+         //velocity
+         r.velocityX = START_VX;
+         r.velocityY = START_VY;
+         r.velocityA = START_VA;
+         
+         //event listeners
+         r.onLeftThrusterFiring = []; //store functions to call
+         r.onRightThrusterFiring = [];
+         r.onEngineFiring = [];
+     }
+ 
+ //==========================================================================//
      //                             Movement Functions                           //
      //==========================================================================//
      //position
@@ -575,8 +604,24 @@
      //                          Land or Crash Functions                         //
      //==========================================================================//
  
-     r.crashedAnimation = function(){
+ 
+     r.land = function(finalY){
+         this.landedAnimation();
+         r.nextY = finalY - (r.landingHeight - r.center_of_mass);
+         r.velocityX = r.velocityY = 0;
+     }
+ 
+     r.crash = function(finalY){
          this.visible = false;
+         this.crashedAnimation();
+         r.nextY = finalY - (r.landingHeight - r.center_of_mass);
+         r.velocityX = r.velocityY = 0;
+     }
+ 
+     r.crashedAnimation = function(){
+         this.cutoutEngine();
+         this.cutoutLeftThruster();
+         this.cutoutRightThruster();
      }
  
      r.landedAnimation = function(){
@@ -599,7 +644,7 @@
          child.currentAnimation === "largeFire";
          var s;
  
-         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nCount: " + r.count + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY;
+         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY;
  
          return s;
      }

@@ -11,7 +11,7 @@ const S_KEY = 83;
 const W_KEY = 87;
 
 var rocket_sheet, fire_sheet, thruster_sheet;
-var stage, queue, rocket, landingSite;
+var stage, queue, rocket, landingSite, collider, gameManager;
 var diagText;
 
 
@@ -43,39 +43,38 @@ function loadGame(){ //alert("loadGame()");
     stage = new createjs.Stage("canvas");
     build_SpriteSheets();
     build_Rocket();
+    build_LandingSite();
+    build_Collider();
+    build_GameManager();
     //build_Rect(0,0, 300, 300, "red"); //debug
     build_Text();   //debug
-    
-    stage.addChild(rocket);
+    //landingSite.redraw(335, 450, 10);
+    stage.addChild(rocket, landingSite);
 }
 
 function startGame(){
     //Ticker object
     createjs.Ticker.framerate = 60;
-    createjs.Ticker.addEventListener("tick", gameStep);
+    createjs.Ticker.addEventListener("tick", gameManager.gameStep);
     
     //listen for key / mouse events
     window.onkeydown  = detectKey;  //calls detectKey() for "keydown" event
     window.onkeyup = removeKey;     //calls removeKey() for "keyup" event
 }
 
-function gameStep(e){
-    if(!createjs.Ticker.paused){
-        
-        gameUpdate();
-        gameRender();
-        stage.update();
-    }
-}
+
 
 function gameUpdate(){
-    rocket.update();
-    diagText.text = rocket.toString() +"\n\nW Key Down: " + wKeyDown;
+    
     if(wKeyDown){
         rocket.fireEngine();
     }
+    rocket.update();
+    collider.update();
     
-
+    
+    
+    diagText.text = rocket.toString();
 }
 
 function gameRender(){
@@ -98,14 +97,10 @@ function detectKey(e){ //alert("detectKey()");
     
     //type check for known browser issues
     e = !e ? window.event : e; //if event is not event, get window.event;
-    
+
     switch(e.keyCode) {
         case W_KEY:
             wKeyDown = true;
-            break;
-        case S_KEY:
-            //sKeyDown = true;    //flag for movement
-            rocket.landedAnimation();
             break;
         case A_KEY:
             rocket.fireLeftThruster();
@@ -140,9 +135,6 @@ function removeKey(e){ //alert("removeKey()");
         case W_KEY:
             wKeyDown = false;    //flag for movement
             rocket.cutoutEngine();
-            break;
-        case S_KEY:
-            //sKeyDown = false;    //flag for movement
             break;
         case A_KEY:
             rocket.cutoutLeftThruster();
@@ -239,7 +231,7 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
 }//end buildSpriteSheets()
 
 
-function build_Rocket(){
+function build_Rocket(){ //alert("build");
     
     const START_Y = -150;    //-150
     var randomX, randomAngle, shiftX, startY;
@@ -252,6 +244,141 @@ function build_Rocket(){
     rocket = new objects.Rocket(rocket_sheet, fire_sheet, thruster_sheet);
 
     rocket.position(randomX + shiftX, START_Y, randomAngle);
+}
+
+function build_LandingSite(){
+    
+    const START_X = 0;
+    const START_Y = stage.canvas.height - 50;
+    const START_W = stage.canvas.width;
+    const START_H = 10;
+    
+    //Shape
+    landingSite = new createjs.Shape();
+    landingSite.visible = true;
+    
+    //createjs properties
+    landingSite.graphics.beginFill("green").drawRect(0, 0, START_W, START_H);
+    landingSite.drawRect = landingSite.graphics.command;
+    landingSite.x = START_X;
+    landingSite.y = START_Y;
+    
+    //dynamically injected properties
+    landingSite.width = stage.canvas.width;
+    
+    landingSite.redraw = function(x,w,h){
+        
+        var gco = landingSite.drawRect;
+        gco.w = w;
+        gco.h = h;
+        gco.x = x;
+        this.width = w;
+    }
+}
+
+function build_Collider(){
+    
+    collider = new createjs.DisplayObject();
+    
+    //check rocket against landingSite and water, trigger events if collision
+    collider.update = function(){//alert("test");
+        
+        var shiftY, shiftX, width;
+        var goodRotation, goodXSpeed, goodYSpeed, goodXRange, goodYRange, landed;
+        var pastLeftEdge, pastRightEdge;
+        
+        //for use in collision calculations
+        shiftY = rocket.landingHeight - rocket.center_of_mass;
+        shiftX = rocket.landing_width/2;    //half the width of distance between legs
+        width = landingSite.width;
+        
+        //checklist for a proper landing
+        //checks vertical range first
+        goodYRange = (rocket.nextY >= landingSite.y - shiftY);
+        
+        if(goodYRange){  //vertical range is good
+            
+            //checklist for proper landing
+            goodRotation  = Math.abs(rocket.rotation) < 5; //rotation < 5 degrees
+            goodYSpeed    = Math.abs(rocket.velocityY) < 10; //speed < 10 m/s
+            goodXSpeed    = Math.abs(rocket.velocityX) < 10;
+            
+            //rocket horizontally in correct location
+            pastLeftEdge = (rocket.nextX - shiftX >= landingSite.x);
+            pastRightEdge = !(rocket.nextX + shiftX <= landingSite.x + width);
+            goodXRange = pastLeftEdge && !pastRightEdge;
+            
+            //checks whether proper landing conditions have been met
+            landed = goodXRange && goodRotation && goodXSpeed && goodYSpeed;
+            
+            
+            if(landed){
+                this.rocketLanded();
+            }
+            else{
+                this.rocketCrashed();
+            }
+        }//end if(goodYRange)
+    }//end collider.update
+    
+    collider.rocketLanded = function(){
+        rocket.land(landingSite.y);
+        gameManager.restartGame();
+    }
+    
+    collider.rocketCrashed = function(){
+        rocket.crash(landingSite.y);
+        gameManager.restartGame();
+    }
+}
+
+function build_GameManager(){
+
+    gameManager = new createjs.DisplayObject();
+    
+    //properties
+    gameManager.count = 0;
+    gameManager.gameover = false;
+    
+    gameManager.gameStep = function(e){
+        
+        if(!createjs.Ticker.paused){
+            
+            if(!gameManager.gameover){
+                gameUpdate();
+                gameRender();
+            }
+            
+            stage.update();
+        }
+    }
+    
+    gameManager.restartGame = function(){
+        
+        gameManager.count++;
+        gameManager.gameover = true;
+        
+        //window.removeEventListener("keydown", detectKey); //doesn't work
+        //need to stop key access
+        wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
+        
+        if(gameManager.count === 1){
+            
+            //wait 2 seconds, then reset game
+            createjs.Tween.get(diagText).to({rotation: 0}, 2500).call(gameManager.reset);
+        }
+    }
+    
+    gameManager.reset = function(){
+
+        gameManager.count = 0;
+        gameManager.gameover = false;
+        
+        stage.removeChild(rocket);
+        build_Rocket();
+        rocket.resetValues();
+        stage.addChildAt(rocket,0);
+    }
 }
 
 //=================================================================================//

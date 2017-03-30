@@ -46,7 +46,7 @@ function loadGame(){ //alert("loadGame()");
     build_LandingSite();
     build_Collider();
     build_GameManager();
-    //build_Rect(0,0, 300, 300, "red"); //debug
+    //build_Rect(0,0, 489, 208, "red"); //debug
     build_Text();   //debug
     //landingSite.redraw(335, 450, 10);
     stage.addChild(rocket, landingSite);
@@ -68,6 +68,12 @@ function gameUpdate(){
     
     if(wKeyDown){
         rocket.fireEngine();
+    }
+    if(aKeyDown){
+        rocket.fireLeftThruster();
+    }
+    if(dKeyDown){
+        rocket.fireRightThruster();
     }
     rocket.update();
     collider.update();
@@ -103,10 +109,12 @@ function detectKey(e){ //alert("detectKey()");
             wKeyDown = true;
             break;
         case A_KEY:
-            rocket.fireLeftThruster();
+            //rocket.fireLeftThruster();
+            aKeyDown = true;
             break;
         case D_KEY:
-            rocket.fireRightThruster();
+            //rocket.fireRightThruster();
+            dKeyDown = true;
             break;
         case UP_ARROW:
             rocket.increaseEngineLevel();
@@ -137,9 +145,11 @@ function removeKey(e){ //alert("removeKey()");
             rocket.cutoutEngine();
             break;
         case A_KEY:
+            aKeyDown = false;
             rocket.cutoutLeftThruster();
             break;
         case D_KEY:
+            dKeyDown = false;
             rocket.cutoutRightThruster();
             break;
     }
@@ -243,6 +253,9 @@ function build_Rocket(){ //alert("build");
     
     rocket = new objects.Rocket(rocket_sheet, fire_sheet, thruster_sheet);
 
+    rocket.addToListener("leftThrusterFiring", build_Smoke);
+    rocket.addToListener("rightThrusterFiring", build_Smoke);
+    rocket.addToListener("engineFiring", build_Smoke);
     rocket.position(randomX + shiftX, START_Y, randomAngle);
 }
 
@@ -274,6 +287,31 @@ function build_LandingSite(){
         gco.x = x;
         this.width = w;
     }
+}
+
+function build_Smoke(endPt){
+    
+    var b, image,randomX, randomShift, randomDirection, globalPt;
+
+    //get x,y of endPt, relative to stage
+    globalPt = endPt.localToGlobal(endPt.x, endPt.y);
+
+    //calculate random values for use with positioning
+    randomDirection = Math.random() > 0.5 ? -1 : 1; //50% chance either direction
+    randomX = Math.floor(Math.random() * 30);
+    randomShift = randomX * randomDirection;
+    
+    //HTML image object
+    image = queue.getResult("smoke");
+    
+    //Bitmap object
+    b = new createjs.Bitmap(image);
+    b.x = globalPt.x - b.image.width/2 + randomShift;    //center horizontally
+    b.y = globalPt.y - b.image.height/2;                 //center vertically
+    b.alpha = 0.5;                              //slightly transparent
+    //b.addEventListener("added", fadeout);       //triggers when sprite added to stage
+    
+    stage.addChild(b);
 }
 
 function build_Collider(){
@@ -360,7 +398,7 @@ function build_GameManager(){
         
         //window.removeEventListener("keydown", detectKey); //doesn't work
         //need to stop key access
-        wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
+        //wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
         
         if(gameManager.count === 1){
             

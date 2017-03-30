@@ -80,7 +80,7 @@ function gameUpdate(){
     
     
     
-    diagText.text = rocket.toString();
+    //diagText.text = rocket.toString();
 }
 
 function gameRender(){
@@ -294,24 +294,41 @@ function build_Smoke(endPt){
     var b, image,randomX, randomShift, randomDirection, globalPt;
 
     //get x,y of endPt, relative to stage
-    globalPt = endPt.localToGlobal(endPt.x, endPt.y);
+    if(endPt){ //not undefined
+        globalPt = endPt.localToGlobal(endPt.x, endPt.y);
+        
+        //calculate random values for use with positioning
+        randomDirection = Math.random() > 0.5 ? -1 : 1; //50% chance either direction
+        randomX = Math.floor(Math.random() * 30);
+        randomShift = randomX * randomDirection;
+        
+        //HTML image object
+        image = queue.getResult("smoke");
+        
+        //Bitmap object
+        b = new createjs.Bitmap(image);
+        b.x = globalPt.x - b.image.width/2 + randomShift;    //center horizontally
+        b.y = globalPt.y - b.image.height/2;                 //center vertically
+        b.alpha = 0.5;                              //slightly transparent
+        b.addEventListener("added", fadeout);
+        
+        stage.addChild(b);
+    }//end if
+}
 
-    //calculate random values for use with positioning
-    randomDirection = Math.random() > 0.5 ? -1 : 1; //50% chance either direction
-    randomX = Math.floor(Math.random() * 30);
-    randomShift = randomX * randomDirection;
+function fadeout(e){
+    var randomMS;
     
-    //HTML image object
-    image = queue.getResult("smoke");
+    //calculate random amount of time to add to standard fadeout time
+    randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
     
-    //Bitmap object
-    b = new createjs.Bitmap(image);
-    b.x = globalPt.x - b.image.width/2 + randomShift;    //center horizontally
-    b.y = globalPt.y - b.image.height/2;                 //center vertically
-    b.alpha = 0.5;                              //slightly transparent
-    //b.addEventListener("added", fadeout);       //triggers when sprite added to stage
-    
-    stage.addChild(b);
+    //uses tween to fade target while also moving it upward
+    //calls for sprite to be removed after completing this animation
+    createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(removeBitmap);
+}
+
+function removeBitmap(){
+    stage.removeChild(this);
 }
 
 function build_Collider(){
@@ -413,8 +430,9 @@ function build_GameManager(){
         gameManager.gameover = false;
         
         stage.removeChild(rocket);
-        build_Rocket();
         rocket.resetValues();
+        build_Rocket();
+        //alert(rocket.children);
         stage.addChildAt(rocket,0);
     }
 }

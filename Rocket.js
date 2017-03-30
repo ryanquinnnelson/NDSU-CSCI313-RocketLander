@@ -503,14 +503,14 @@
          }
      }
  
- r.getThrusterFiringPt = function(child){
-     if(child.name === "thrusterL"){
-         return this.getChildByName("thrusterLPt");
+     r.getThrusterFiringPt = function(child){
+         if(child.name === "thrusterL"){
+             return this.getChildByName("thrusterLPt");
+         }
+         else{
+             return this.getChildByName("thrusterRPt");
+         }
      }
-     else{
-         return this.getChildByName("thrusterRPt");
-     }
- }
  
  
  
@@ -678,7 +678,7 @@
          child.currentAnimation === "largeFire";
          var s;
  
-         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY;
+         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY + "\nFire Animation: " + this.getChildByName("fire").currentAnimation;
  
          return s;
      }

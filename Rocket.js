@@ -13,7 +13,7 @@
  
  
      //create namespace
-     window.objects = window.containers || {};
+     window.objects = window.objects || {};
      
      //constructor
      function Rocket(rocket_sheet, fire_sheet, thruster_sheet){
@@ -29,7 +29,6 @@
         this.buildThrusters(thruster_sheet);
         this.buildFirePts();
         this.buildThrusterPts();
-
         this.visible = true;
     }
  
@@ -76,8 +75,6 @@
      r.onLeftThrusterFiring = []; //store functions to call
      r.onRightThrusterFiring = [];
      r.onEngineFiring = [];
- 
-
  
  
      //==========================================================================//
@@ -213,6 +210,7 @@
          this.addChild(right, left);
      }
  
+ 
      //==========================================================================//
      //                          Rocket Property Functions                       //
      //==========================================================================//
@@ -329,7 +327,7 @@
          r.onEngineFiring = [];
      }
  
- //==========================================================================//
+     //==========================================================================//
      //                             Movement Functions                           //
      //==========================================================================//
      //position
@@ -423,8 +421,8 @@
      //thrusters
      r.fireLeftThruster = function(){
          //update animation
-         var isThrusting, child;
-         
+         var isThrusting, child, endPt;
+ 
          child = this.getChildByName("thrusterL");
          isThrusting = child.currentAnimation === "thrust";
  
@@ -440,16 +438,18 @@
          //reduce remaining monopropellant
          r.decreaseMono();
  
- 
+         //get firing point
+         endPt = this.getThrusterFiringPt(child);
+
          //run other functions added to this event
          for(i = 0; i < r.onLeftThrusterFiring.length; i++){
-             r.onLeftThrusterFiring[i](); //call function stored
+             r.onLeftThrusterFiring[i](endPt); //call function stored
          }
      }
  
      r.fireRightThruster = function(){
          //update animation
-         var isThrusting, child;
+         var isThrusting, child, endPt;
          
          child = this.getChildByName("thrusterR");
          isThrusting = child.currentAnimation === "thrust";
@@ -466,10 +466,12 @@
          //reduce remaining monopropellant
          r.decreaseMono();
  
-         
+         //get firing point
+         endPt = this.getThrusterFiringPt(child);
+ 
          //run other functions added to this event
          for(i = 0; i < r.onRightThrusterFiring.length; i++){
-             r.onRightThrusterFiring[i](); //call function stored
+             r.onRightThrusterFiring[i](endPt); //call function stored
          }
      }
  
@@ -501,13 +503,24 @@
          }
      }
  
+     r.getThrusterFiringPt = function(child){
+         if(child.name === "thrusterL"){
+             return this.getChildByName("thrusterLPt");
+         }
+         else{
+             return this.getChildByName("thrusterRPt");
+         }
+     }
+ 
+ 
+ 
      //==========================================================================//
      //                              Engine Functions                            //
      //==========================================================================//
  
      //engine
      r.fireEngine = function(){
-         var child, isFiring;
+         var child, isFiring, endPt;
      
          child = this.getChildByName("fire");
          isFiring =  r.isEngineFiring(child);
@@ -530,9 +543,12 @@
          //reduce fuel remaining
          r.decreaseFuel();
  
+         //get firing point
+         endPt = this.getEngineFiringPt(child);
+
          //run other functions added to this event
          for(i = 0; i < r.onEngineFiring.length; i++){
-             r.onEngineFiring[i](); //call function stored
+             r.onEngineFiring[i](endPt); //call function stored
          }
      }
  
@@ -600,6 +616,24 @@
          } //end switch
      }
  
+     r.getEngineFiringPt = function(child){
+ 
+         switch(child.currentAnimation){
+             case "tinyFire":
+                return this.getChildByName("tinyPt");
+                break;
+             case "smallFire":
+                return this.getChildByName("smallPt");
+                break;
+             case "mediumFire":
+                return this.getChildByName("mediumPt");
+                break;
+             case "largeFire":
+                return this.getChildByName("largePt");
+                break;
+         }
+     }
+ 
      //==========================================================================//
      //                          Land or Crash Functions                         //
      //==========================================================================//
@@ -644,7 +678,7 @@
          child.currentAnimation === "largeFire";
          var s;
  
-         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY;
+         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY + "\nFire Animation: " + this.getChildByName("fire").currentAnimation;
  
          return s;
      }

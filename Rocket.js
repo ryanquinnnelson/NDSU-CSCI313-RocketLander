@@ -8,7 +8,7 @@
      const START_FUEL = 5000;  //starting rocket fuel level for each attempt
      const START_MONO = 1000;  //starting monopropellant level for each attempt
      const START_VX = 0;      //starting horizontal velocity for each attempt
-     const START_VY = 10;     //starting vertical velocity for each attempt
+     const START_VY = 15;     //starting vertical velocity for each attempt
      const START_VA = 0;      //starting angular velocity for each attempt
  
  

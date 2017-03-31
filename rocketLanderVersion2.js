@@ -80,7 +80,7 @@ function gameUpdate(){
     
     
     
-    //diagText.text = rocket.toString();
+    diagText.text = rocket.toString();
 }
 
 function gameRender(){

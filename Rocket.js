@@ -5,10 +5,10 @@
      //constants
      const THRUST_MAX = 100;       //force rocket generates at full power, in kN
      const TORQUE = 1;        //torque
-     const START_FUEL = 5000;  //starting rocket fuel level for each attempt
-     const START_MONO = 1000;  //starting monopropellant level for each attempt
+     const START_FUEL = 1000;  //starting rocket fuel level for each attempt
+     const START_MONO = 100;  //starting monopropellant level for each attempt
      const START_VX = 0;      //starting horizontal velocity for each attempt
-     const START_VY = 15;     //starting vertical velocity for each attempt
+     const START_VY = 10;     //starting vertical velocity for each attempt
      const START_VA = 0;      //starting angular velocity for each attempt
  
  
@@ -49,7 +49,8 @@
      r.center_of_mass = 351;
      r.height = 496;
      r.landingHeight = 529;
-     r.centerToExtendedLegs = 328;
+     //r.centerToExtendedLegs = 328;
+     r.centerToExtendedLegs = 179;
  
      //position
      r.nextX = 0;
@@ -267,7 +268,15 @@
      r.getFuel = function(){
          return r.fuel;
      }
+ 
+     r.getStartFuel = function(){   //added
+         return START_FUEL;
+     }
      
+     r.getStartMono = function(){   //added
+         return START_MONO;
+     }
+  
      r.setMono = function(n){
          r.mono = n;
      }
@@ -680,7 +689,7 @@
          child.currentAnimation === "largeFire";
          var s;
  
-         s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + rocket.engineLevel + "\nEngine Level Changed: " + rocket.engineLevelChanged + "\nIs Firing: " + isFiring + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY + "\nFire Animation: " + this.getChildByName("fire").currentAnimation;
+     s = "Torque: " + rocket.torque +"\nThrust: " + r.thrust + "\nEngine Level: " + r.engineLevel + "\nEngine Level Changed: " + r.engineLevelChanged + "\nIs Firing: " + isFiring + "\nFuel: " + r.fuel + "\nMono: " + r.mono + "\nRotation: " + this.rotation + "\nNextA: " + r.nextA + "\nVelocityX: " + r.velocityX + "\nVelocityY: " + r.velocityY + "\nFire Animation: " + this.getChildByName("fire").currentAnimation + "\nY: " + this.y + "\nregY: " + this.regY;
  
          return s;
      }

@@ -11,8 +11,10 @@ const S_KEY = 83;
 const W_KEY = 87;
 
 var rocket_sheet, fire_sheet, thruster_sheet;
-var stage, queue, rocket, landingSite, collider, gameManager;
-var diagText;
+var stage, queue;                               //required for createjs
+var rocket, landingSite;                        //game objects
+var collider, gameManager, backgroundManager;   //encapsulated objects
+var diagText, tempBar;
 
 
 var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
@@ -44,15 +46,17 @@ function loadGame(){ //alert("loadGame()");
     build_SpriteSheets();
     build_Rocket();
     build_LandingSite();
+    build_BackgroundManager();
     build_Collider();
     build_GameManager();
-    //build_Rect(0,0, 489, 208, "red"); //debug
+    //build_Rect(0,0, 500, 500, "red"); //debug
     build_Text();   //debug
-    //landingSite.redraw(335, 450, 10);
+    build_tempBar();
     stage.addChild(rocket, landingSite);
 }
 
 function startGame(){
+
     //Ticker object
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener("tick", gameManager.gameStep);
@@ -78,8 +82,9 @@ function gameUpdate(){
     rocket.update();
     collider.update();
     
-    
-    
+    //temporary
+    tempBar.updateText("mono", rocket.getMono(), rocket.getStartMono());
+    tempBar.updateFill(rocket.getMono() / rocket.getStartMono() );
     diagText.text = rocket.toString();
 }
 
@@ -287,11 +292,105 @@ function build_LandingSite(){
         gco.x = x;
         this.width = w;
     }
+    
+    landingSite.show = function(){
+        this.visible = true;
+    }
+    
+    landingSite.hide = function(){
+        this.visible = false;
+    }
+}
+
+function build_BackgroundManager(){
+    
+    var ocean, earth, oceanSlice, earthSlice;
+    
+    backgroundManager = new createjs.DisplayObject();
+    
+    //build Earth background
+    //HTML image element
+    image = queue.getResult("earth");
+    
+    //Bitmap
+    earth = new createjs.Bitmap(image);
+    earth.x = earth.y = 0;
+    earth.visible = true;
+    earth.name = "earth";
+    
+    //background slice to hide flames that go into the ground (past 0 altitude)
+    image = queue.getResult("earthslice");
+    
+    //Bitmap
+    earthSlice = new createjs.Bitmap(image);
+    earthSlice.x = earthSlice.y = 0;
+    earthSlice.visible = true;
+    earthSlice.name = "earthslice";
+    
+    //build Ocean background
+    //HTML image element
+    image = queue.getResult("ocean");
+    
+    //Bitmap
+    ocean = new createjs.Bitmap(image);
+    ocean.x = ocean.y = 0;
+    ocean.visible = false;
+    ocean.name = "ocean";
+    
+    //background slice to hide flames that go into the ground (past 0 altitude)
+    image = queue.getResult("oceanslice");
+    
+    //Bitmap
+    oceanSlice = new createjs.Bitmap(image);
+    oceanSlice.x = oceanSlice.y = 0;
+    oceanSlice.visible = false;
+    oceanSlice.name = "oceanslice";
+    
+    //add to stage
+    stage.addChildAt(earth, ocean, 0);
+    stage.addChild(earthSlice, oceanSlice);
+    
+    
+    backgroundManager.showEarthBackground = function(){
+        var background, slice;
+        
+        background = stage.getChildByName("earth");
+        slice = stage.getChildByName("earthslice");
+        
+        background.visible = slice.visible = true;
+    }
+    
+    backgroundManager.hideEarthBackground = function(){
+        var background, slice;
+        
+        background = stage.getChildByName("earth");
+        slice = stage.getChildByName("earthslice");
+        
+        background.visible = slice.visible = false;
+    }
+    
+    backgroundManager.showOceanBackground = function(){
+        var background, slice;
+        
+        background = stage.getChildByName("ocean");
+        slice = stage.getChildByName("oceanslice");
+        
+        background.visible = slice.visible = true;
+    }
+    
+    backgroundManager.hideOceanBackground = function(){
+        var background, slice;
+        
+        background = stage.getChildByName("ocean");
+        slice = stage.getChildByName("oceanslice");
+        
+        background.visible = slice.visible = false;
+    }
 }
 
 function build_Smoke(endPt){
     
-    var b, image,randomX, randomShift, randomDirection, globalPt;
+    var b, image,randomX, randomShift, randomDirection, globalPt, randomMS;
 
     //get x,y of endPt, relative to stage
     if(endPt){ //not undefined
@@ -309,34 +408,67 @@ function build_Smoke(endPt){
         b = new createjs.Bitmap(image);
         b.x = globalPt.x - b.image.width/2 + randomShift;    //center horizontally
         b.y = globalPt.y - b.image.height/2;                 //center vertically
-        b.alpha = 0.5;                              //slightly transparent
-        b.addEventListener("added", fadeout);
+        b.alpha = 0.5;                                       //slightly transparent
+        b.name = "smoke";
         
+        //injected properties
+        b.complete = function(){
+
+            stage.removeChild(this);
+        }
+        
+        
+        b.fadeout = function(e){
+            
+            var randomMS;
+            
+            //calculate random amount of time to add to standard fadeout time
+            randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
+            
+            //uses tween to fade target while also moving it upward
+            //calls for sprite to be removed after completing this animation
+            createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(b.complete);
+        }
+        
+        //add event listener to bitmap to be called when object added to stage
+        b.addEventListener("added", b.fadeout);
+        
+        //add to container
         stage.addChild(b);
     }//end if
 }
 
-function fadeout(e){
-    var randomMS;
-    
-    //calculate random amount of time to add to standard fadeout time
-    randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
-    
-    //uses tween to fade target while also moving it upward
-    //calls for sprite to be removed after completing this animation
-    createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(removeBitmap);
-}
-
-function removeBitmap(){
-    stage.removeChild(this);
-}
 
 function build_Collider(){
     
     collider = new createjs.DisplayObject();
     
+    //injected properties
+    //variables
+    collider.rocketAltitude;    //height above bottom of stage in pixels
+    collider.landingSiteAltitude;
+    
+    //functions
+    collider.getRocketAltitude = function(){
+        return this.rocketAltitude;
+    }
+    
+    collider.getLandingSiteAltitude = function(){
+        return this.landingSiteAltitude;
+    }
+    
+    collider.update = function(){
+        this.updateCollision();
+        this.updateAltitude();
+    }
+    
+    collider.updateAltitude = function(){
+        this.rocketAltitude = rocket.y + rocket.centerToExtendedLegs;
+        this.landingSiteAltitude = landingSite.y;
+    }
+    
     //check rocket against landingSite and water, trigger events if collision
-    collider.update = function(){//alert("test");
+    collider.updateCollision = function(){//alert("check");
         
         var shiftY, shiftX, width;
         var goodRotation, goodXSpeed, goodYSpeed, goodXRange, goodYRange, landed;
@@ -433,7 +565,7 @@ function build_GameManager(){
         rocket.resetValues();
         build_Rocket();
         //alert(rocket.children);
-        stage.addChildAt(rocket,0);
+        stage.addChildAt(rocket,3);
     }
 }
 
@@ -469,7 +601,30 @@ function build_Text(){
     stage.update();
 }
 
+function build_tempBar(){
+    tempBar = new objects.FuelBar(750,50,"green", "black");
+    stage.addChild(tempBar);
+}
 
+
+
+/*
+ //DEPRECATED
+ function fadeout(e){
+ var randomMS;
+ 
+ //calculate random amount of time to add to standard fadeout time
+ randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
+ 
+ //uses tween to fade target while also moving it upward
+ //calls for sprite to be removed after completing this animation
+ createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(removeBitmap);
+ }
+ 
+ function removeBitmap(){
+ stage.removeChild(this);
+ }
+ */
 
 
 

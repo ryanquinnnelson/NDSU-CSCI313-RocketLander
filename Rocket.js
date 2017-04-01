@@ -268,7 +268,15 @@
      r.getFuel = function(){
          return r.fuel;
      }
+ 
+     r.getStartFuel = function(){   //added
+         return START_FUEL;
+     }
      
+     r.getStartMono = function(){   //added
+         return START_MONO;
+     }
+  
      r.setMono = function(n){
          r.mono = n;
      }

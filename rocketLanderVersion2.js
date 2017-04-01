@@ -12,7 +12,7 @@ const W_KEY = 87;
 
 var rocket_sheet, fire_sheet, thruster_sheet;
 var stage, queue, rocket, landingSite, collider, gameManager, backgroundManager;
-var diagText;
+var diagText, tempBar;
 
 
 var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
@@ -47,8 +47,9 @@ function loadGame(){ //alert("loadGame()");
     build_BackgroundManager();
     build_Collider();
     build_GameManager();
-    //build_Rect(0,0, 500, 622, "red"); //debug
+    //build_Rect(0,0, 500, 500, "red"); //debug
     build_Text();   //debug
+    build_tempBar();
     //landingSite.redraw(335, 450, 10);
     stage.addChild(rocket, landingSite);
 }
@@ -80,8 +81,8 @@ function gameUpdate(){
     rocket.update();
     collider.update();
     
-    
-    
+
+    //tempBar.updateText("fuel", rocket.getFuel(), rocket.getStartFuel());
     diagText.text = rocket.toString();
 }
 
@@ -596,6 +597,11 @@ function build_Text(){
     
     stage.addChild(diagText);
     stage.update();
+}
+
+function build_tempBar(){
+    tempBar = new objects.FuelBar(500,500,"green", "black");
+    stage.addChild(tempBar);
 }
 
 

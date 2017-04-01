@@ -291,7 +291,7 @@ function build_LandingSite(){
 
 function build_Smoke(endPt){
     
-    var b, image,randomX, randomShift, randomDirection, globalPt;
+    var b, image,randomX, randomShift, randomDirection, globalPt, randomMS;
 
     //get x,y of endPt, relative to stage
     if(endPt){ //not undefined
@@ -309,27 +309,36 @@ function build_Smoke(endPt){
         b = new createjs.Bitmap(image);
         b.x = globalPt.x - b.image.width/2 + randomShift;    //center horizontally
         b.y = globalPt.y - b.image.height/2;                 //center vertically
-        b.alpha = 0.5;                              //slightly transparent
-        b.addEventListener("added", fadeout);
+        b.alpha = 0.5;                                       //slightly transparent
+        b.name = "smoke";
         
+        //injected properties
+        b.complete = function(){
+
+            stage.removeChild(this);
+        }
+        
+        
+        b.fadeout = function(e){
+            
+            var randomMS;
+            
+            //calculate random amount of time to add to standard fadeout time
+            randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
+            
+            //uses tween to fade target while also moving it upward
+            //calls for sprite to be removed after completing this animation
+            createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(b.complete);
+        }
+        
+        //add event listener to bitmap to be called when object added to stage
+        b.addEventListener("added", b.fadeout);
+        
+        //add to container
         stage.addChild(b);
     }//end if
 }
 
-function fadeout(e){
-    var randomMS;
-    
-    //calculate random amount of time to add to standard fadeout time
-    randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
-    
-    //uses tween to fade target while also moving it upward
-    //calls for sprite to be removed after completing this animation
-    createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(removeBitmap);
-}
-
-function removeBitmap(){
-    stage.removeChild(this);
-}
 
 function build_Collider(){
     
@@ -470,6 +479,24 @@ function build_Text(){
 }
 
 
+
+/*
+ //DEPRECATED
+ function fadeout(e){
+ var randomMS;
+ 
+ //calculate random amount of time to add to standard fadeout time
+ randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
+ 
+ //uses tween to fade target while also moving it upward
+ //calls for sprite to be removed after completing this animation
+ createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(removeBitmap);
+ }
+ 
+ function removeBitmap(){
+ stage.removeChild(this);
+ }
+ */
 
 
 

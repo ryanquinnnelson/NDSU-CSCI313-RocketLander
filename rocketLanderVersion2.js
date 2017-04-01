@@ -46,7 +46,7 @@ function loadGame(){ //alert("loadGame()");
     build_LandingSite();
     build_Collider();
     build_GameManager();
-    //build_Rect(0,0, 489, 208, "red"); //debug
+    build_Rect(0,0, 500, 622, "red"); //debug
     build_Text();   //debug
     //landingSite.redraw(335, 450, 10);
     stage.addChild(rocket, landingSite);
@@ -344,8 +344,22 @@ function build_Collider(){
     
     collider = new createjs.DisplayObject();
     
+    //injected properties
+    collider.rocketAltitude;    //height above bottom of stage in pixels
+    collider.landingSiteAltitude;
+    
+    collider.update = function(){
+        this.updateCollision();
+        this.updateAltitude();
+    }
+    
+    collider.updateAltitude = function(){
+        collider.rocketAltitude = rocket.y + rocket.centerToExtendedLegs;
+        collider.landingSiteAltitude = landingSite.y;
+    }
+    
     //check rocket against landingSite and water, trigger events if collision
-    collider.update = function(){//alert("test");
+    collider.updateCollision = function(){//alert("check");
         
         var shiftY, shiftX, width;
         var goodRotation, goodXSpeed, goodYSpeed, goodXRange, goodYRange, landed;

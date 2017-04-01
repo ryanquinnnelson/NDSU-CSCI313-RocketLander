@@ -5,8 +5,8 @@
      //constants
      const THRUST_MAX = 100;       //force rocket generates at full power, in kN
      const TORQUE = 1;        //torque
-     const START_FUEL = 5000;  //starting rocket fuel level for each attempt
-     const START_MONO = 1000;  //starting monopropellant level for each attempt
+     const START_FUEL = 1000;  //starting rocket fuel level for each attempt
+     const START_MONO = 100;  //starting monopropellant level for each attempt
      const START_VX = 0;      //starting horizontal velocity for each attempt
      const START_VY = 10;     //starting vertical velocity for each attempt
      const START_VA = 0;      //starting angular velocity for each attempt

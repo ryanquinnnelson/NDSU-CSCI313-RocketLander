@@ -54,7 +54,7 @@ function loadGame(){ //alert("loadGame()");
 }
 
 function startGame(){
-    
+
     //Ticker object
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener("tick", gameManager.gameStep);
@@ -288,6 +288,14 @@ function build_LandingSite(){
         gco.h = h;
         gco.x = x;
         this.width = w;
+    }
+    
+    landingSite.show = function(){
+        this.visible = true;
+    }
+    
+    landingSite.hide = function(){
+        this.visible = false;
     }
 }
 

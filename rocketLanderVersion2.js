@@ -11,7 +11,7 @@ const S_KEY = 83;
 const W_KEY = 87;
 
 var rocket_sheet, fire_sheet, thruster_sheet;
-var stage, queue, rocket, landingSite, collider, gameManager;
+var stage, queue, rocket, landingSite, collider, gameManager, backgroundManager;
 var diagText;
 
 
@@ -44,15 +44,17 @@ function loadGame(){ //alert("loadGame()");
     build_SpriteSheets();
     build_Rocket();
     build_LandingSite();
+    build_BackgroundManager();
     build_Collider();
     build_GameManager();
-    build_Rect(0,0, 500, 622, "red"); //debug
+    //build_Rect(0,0, 500, 622, "red"); //debug
     build_Text();   //debug
     //landingSite.redraw(335, 450, 10);
     stage.addChild(rocket, landingSite);
 }
 
 function startGame(){
+    
     //Ticker object
     createjs.Ticker.framerate = 60;
     createjs.Ticker.addEventListener("tick", gameManager.gameStep);
@@ -289,6 +291,92 @@ function build_LandingSite(){
     }
 }
 
+function build_BackgroundManager(){
+    
+    var ocean, earth, oceanSlice, earthSlice;
+    
+    backgroundManager = new createjs.DisplayObject();
+    
+    //build Earth background
+    //HTML image element
+    image = queue.getResult("earth");
+    
+    //Bitmap
+    earth = new createjs.Bitmap(image);
+    earth.x = earth.y = 0;
+    earth.visible = true;
+    earth.name = "earth";
+    
+    //background slice to hide flames that go into the ground (past 0 altitude)
+    image = queue.getResult("earthslice");
+    
+    //Bitmap
+    earthSlice = new createjs.Bitmap(image);
+    earthSlice.x = earthSlice.y = 0;
+    earthSlice.visible = true;
+    earthSlice.name = "earthslice";
+    
+    //build Ocean background
+    //HTML image element
+    image = queue.getResult("ocean");
+    
+    //Bitmap
+    ocean = new createjs.Bitmap(image);
+    ocean.x = ocean.y = 0;
+    ocean.visible = false;
+    ocean.name = "ocean";
+    
+    //background slice to hide flames that go into the ground (past 0 altitude)
+    image = queue.getResult("oceanslice");
+    
+    //Bitmap
+    oceanSlice = new createjs.Bitmap(image);
+    oceanSlice.x = oceanSlice.y = 0;
+    oceanSlice.visible = false;
+    oceanSlice.name = "oceanslice";
+    
+    //add to stage
+    stage.addChildAt(earth, ocean, 0);
+    stage.addChild(earthSlice, oceanSlice);
+    
+    
+    backgroundManager.showEarthBackground = function(){
+        var background, slice;
+        
+        background = stage.getChildByName("earth");
+        slice = stage.getChildByName("earthslice");
+        
+        background.visible = slice.visible = true;
+    }
+    
+    backgroundManager.hideEarthBackground = function(){
+        var background, slice;
+        
+        background = stage.getChildByName("earth");
+        slice = stage.getChildByName("earthslice");
+        
+        background.visible = slice.visible = false;
+    }
+    
+    backgroundManager.showOceanBackground = function(){
+        var background, slice;
+        
+        background = stage.getChildByName("ocean");
+        slice = stage.getChildByName("oceanslice");
+        
+        background.visible = slice.visible = true;
+    }
+    
+    backgroundManager.hideOceanBackground = function(){
+        var background, slice;
+        
+        background = stage.getChildByName("ocean");
+        slice = stage.getChildByName("oceanslice");
+        
+        background.visible = slice.visible = false;
+    }
+}
+
 function build_Smoke(endPt){
     
     var b, image,randomX, randomShift, randomDirection, globalPt, randomMS;
@@ -345,8 +433,18 @@ function build_Collider(){
     collider = new createjs.DisplayObject();
     
     //injected properties
+    //variables
     collider.rocketAltitude;    //height above bottom of stage in pixels
     collider.landingSiteAltitude;
+    
+    //functions
+    collider.getRocketAltitude = function(){
+        return this.rocketAltitude;
+    }
+    
+    collider.getLandingSiteAltitude = function(){
+        return this.landingSiteAltitude;
+    }
     
     collider.update = function(){
         this.updateCollision();
@@ -354,8 +452,8 @@ function build_Collider(){
     }
     
     collider.updateAltitude = function(){
-        collider.rocketAltitude = rocket.y + rocket.centerToExtendedLegs;
-        collider.landingSiteAltitude = landingSite.y;
+        this.rocketAltitude = rocket.y + rocket.centerToExtendedLegs;
+        this.landingSiteAltitude = landingSite.y;
     }
     
     //check rocket against landingSite and water, trigger events if collision

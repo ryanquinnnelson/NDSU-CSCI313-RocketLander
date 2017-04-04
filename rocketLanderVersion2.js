@@ -287,11 +287,28 @@ function build_LandingSite(){
     //dynamically injected properties
     landingSite.width = stage.canvas.width;
     
-    landingSite.redraw = function(x,w,h){
+    landingSite.redraw = function(level){
         
-        var gco = landingSite.drawRect;
+        var gco, w,x; //h;
+        
+        
+        
+        switch(level){
+            case 0:
+                w = stage.canvas.width;
+                //h =
+                x = 0;
+                break;
+            case 1:
+                w = 450;
+                //h =
+                x = 335;
+                break;
+        }
+        
+        gco = landingSite.drawRect;
         gco.w = w;
-        gco.h = h;
+       // gco.h = h;
         gco.x = x;
         this.width = w;
     }

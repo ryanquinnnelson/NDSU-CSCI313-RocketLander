@@ -311,7 +311,7 @@
      }
 
  
-     r.resetValues = function(){
+     r.reset = function(){
          //position
          r.nextX = 0;
          r.nextY = 0;
@@ -331,11 +331,14 @@
          r.velocityX = START_VX;
          r.velocityY = START_VY;
          r.velocityA = START_VA;
-         
+ 
+         //visibility
+         this.visible = true;
+ 
          //event listeners
-         r.onLeftThrusterFiring = []; //store functions to call
-         r.onRightThrusterFiring = [];
-         r.onEngineFiring = [];
+         //r.onLeftThrusterFiring = []; //store functions to call
+         //r.onRightThrusterFiring = [];
+         //r.onEngineFiring = [];
      }
  
      //==========================================================================//

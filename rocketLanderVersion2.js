@@ -354,6 +354,17 @@ function build_BackgroundManager(){
     stage.addChild(earthSlice, oceanSlice);
     
     
+    backgroundManager.show = function(level){
+        switch(level){
+            case 0:
+                this.showEarthBackground();
+                break;
+            case 1:
+                this.showOceanBackground();
+                break;
+        }//end switch
+    }
+    
     backgroundManager.showEarthBackground = function(){
         var background, slice;
         
@@ -361,8 +372,10 @@ function build_BackgroundManager(){
         slice = stage.getChildByName("earthslice");
         
         background.visible = slice.visible = true;
+        this.hideOceanBackground();
     }
     
+    //unnecessary method
     backgroundManager.hideEarthBackground = function(){
         var background, slice;
         
@@ -379,8 +392,10 @@ function build_BackgroundManager(){
         slice = stage.getChildByName("oceanslice");
         
         background.visible = slice.visible = true;
+        this.hideEarthBackground();
     }
     
+    //unnecessary method
     backgroundManager.hideOceanBackground = function(){
         var background, slice;
         

@@ -256,11 +256,14 @@ function build_Rocket(){ //alert("build");
     randomAngle = Math.floor(Math.random() * 10);        //0 - 10
     shiftX = stage.canvas.width/5;  //shift position 20% from left edge
     
-    rocket = new objects.Rocket(rocket_sheet, fire_sheet, thruster_sheet);
-
-    rocket.addToListener("leftThrusterFiring", build_Smoke);
-    rocket.addToListener("rightThrusterFiring", build_Smoke);
-    rocket.addToListener("engineFiring", build_Smoke);
+    if(!rocket){
+        rocket = new objects.Rocket(rocket_sheet, fire_sheet, thruster_sheet);
+        
+        rocket.addToListener("leftThrusterFiring", build_Smoke);
+        rocket.addToListener("rightThrusterFiring", build_Smoke);
+        rocket.addToListener("engineFiring", build_Smoke);
+    }
+    
     rocket.position(randomX + shiftX, START_Y, randomAngle);
 }
 
@@ -561,11 +564,11 @@ function build_GameManager(){
         gameManager.count = 0;
         gameManager.gameover = false;
         
-        stage.removeChild(rocket);
-        rocket.resetValues();
+        //stage.removeChild(rocket);
+        rocket.reset();
         build_Rocket();
         //alert(rocket.children);
-        stage.addChildAt(rocket,3);
+        //stage.addChildAt(rocket,3);
     }
 }
 

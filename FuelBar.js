@@ -1,4 +1,5 @@
 //FuelBar.js
+//Fuel bar is a loading bar with text that is used to visualize remaining fuel
 
 (function () {
 
@@ -9,10 +10,14 @@
      function FuelBar(x,y,fillColor, strokeColor){
 
         this.Container_constructor(); //superclass constructor
+ 
+        //set properties
         this.x = x;
         this.y = y;
         this.fillColor = fillColor;
         this.strokeColor = strokeColor;
+ 
+        //add children
         this.drawBar();
     }
  
@@ -30,7 +35,9 @@
      f.bar;
      f.label;
  
+     //initializes all children and adds them to FuelBar container
      f.drawBar = function(){
+ 
          //outline
          var outline = new createjs.Shape();
          outline.graphics.beginStroke(this.strokeColor);
@@ -47,22 +54,31 @@
          this.label.x = 10;
          this.label.y = 5;
  
+         //add to container
          this.addChild(this.bar, outline, this.label);
      }
  
+     //updates the fill visualization and the text
      f.update = function(){
+ 
         this.updateBar();
         this.updateText();
      }
  
+     //updates the fill visualization based on the percentage of fuel remaining
+     //rather than redraw the fill rectangle, only the horizontal scale of the fill
+     //bar is altered
      f.updateFill = function(percentRemaining){
  
-         if(percentRemaining <= 1 && percentRemaining >= 0){
+         if(percentRemaining <= 1 && percentRemaining >= 0){ //in range
+ 
              this.bar.scaleX = percentRemaining;
          }
      }
-     
+ 
+     //updates the text of the FillBar given the type, current fuel level and starting fuel level
      f.updateText = function(type, current, start){
+ 
          var m;
          
          switch(type){
@@ -72,15 +88,15 @@
              case "mono":
                  m = "Monopropellant: ";
                  break;
-             }
+         }
      
      
          m = m + current.toFixed(2) + " / " + start.toFixed(2);
          
          this.label.text = m;
-     }
+     }//end updateText
  
- }());
+ }()); //end IIFE
 
 
 

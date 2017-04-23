@@ -165,7 +165,9 @@ function removeKey(e){ //alert("removeKey()");
 //                                   Load Functions                                //
 //=================================================================================//
 
-
+/*
+ Performs all operations necessary to build the data objects and spritesheets used in the game.
+ */
 function build_SpriteSheets(){ //alert("buildSpriteSheets()");
     
     var image, data;
@@ -246,6 +248,11 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
 }//end buildSpriteSheets()
 
 
+/*
+ Performs all operations necessary to instantiate the Rocket object and position it within the stage.
+ 
+ Each time the rocket is built, function calculates a random horizontal position and angle.
+ */
 function build_Rocket(){ //alert("build");
     
     const START_Y = -150;    //-150
@@ -256,19 +263,26 @@ function build_Rocket(){ //alert("build");
     randomAngle = Math.floor(Math.random() * 10);        //0 - 10
     shiftX = stage.canvas.width/5;  //shift position 20% from left edge
     
-    if(!rocket){
+    if(!rocket){ //rocket hasn't been initialized yet
+        
+        //construct rocket object
         rocket = new objects.Rocket(rocket_sheet, fire_sheet, thruster_sheet);
         
+        //store function definitions in event listeners
         rocket.addToListener("leftThrusterFiring", build_Smoke);
         rocket.addToListener("rightThrusterFiring", build_Smoke);
         rocket.addToListener("engineFiring", build_Smoke);
-    }
+    } //end if
     
     rocket.position(randomX + shiftX, START_Y, randomAngle);
-}
+}//end build_Rocket
 
+/*
+ Encapsulates all operations necessary to instantiate the landingSite and position it within the stage. Landing Site object contains all functionality and properties related to the landing site inside itself.
+ */
 function build_LandingSite(){
     
+    //default location
     const START_X = 0;
     const START_Y = stage.canvas.height - 50;
     const START_W = stage.canvas.width;
@@ -280,35 +294,35 @@ function build_LandingSite(){
     
     //createjs properties
     landingSite.graphics.beginFill("green").drawRect(0, 0, START_W, START_H);
-    landingSite.drawRect = landingSite.graphics.command;
+    landingSite.drawRect = landingSite.graphics.command; //store reference for later
     landingSite.x = START_X;
     landingSite.y = START_Y;
     
     //dynamically injected properties
     landingSite.width = stage.canvas.width;
     
+    //draws the landing site based on the given level
+    //gco stands for graphic command object
     landingSite.redraw = function(level){
         
         var gco, w,x; //h;
         
-        
-        
         switch(level){
-            case 0:
-                w = stage.canvas.width;
+            case 0: //earth
+                w = stage.canvas.width; //landing site extends full width of canvas
                 //h =
                 x = 0;
                 break;
-            case 1:
-                w = 450;
+            case 1: //ocean
+                w = 450;                //landing site only on drone ship
                 //h =
                 x = 335;
                 break;
         }
         
-        gco = landingSite.drawRect;
+        gco = landingSite.drawRect; //reference to Graphics.Rect gco
         gco.w = w;
-       // gco.h = h;
+       // gco.h = h;    //height doesn't change
         gco.x = x;
         this.width = w;
     }
@@ -320,8 +334,11 @@ function build_LandingSite(){
     landingSite.hide = function(){
         this.visible = false;
     }
-}
+}//end build_landingSite
 
+/*
+ Encapsulates all operations necessary to build the backgrounds of the game as well as an object to manage them. Slices of the backgrounds are drawn in front of the rocket  to hide any flame extending below the landing site level. This gives the impression that the ground is solid.
+ */
 function build_BackgroundManager(){
     
     var ocean, earth, oceanSlice, earthSlice;
@@ -371,6 +388,7 @@ function build_BackgroundManager(){
     stage.addChild(earthSlice, oceanSlice);
     
     
+    //function used to change the visibility of the background object based on level
     backgroundManager.show = function(level){
         switch(level){
             case 0:
@@ -423,6 +441,12 @@ function build_BackgroundManager(){
     }
 }
 
+/*
+ Encapsualtes all functionality necessary to build and animate smoke from the rocket.
+ Function is called every time a thruster or engine fires. The generated smoke bitmap is placed near the given point, then fades upward and is removed.
+ 
+ Position and amount of time for fadeout is randomly selected to create a more realistic appearance to the smoke.
+ */
 function build_Smoke(endPt){
     
     var b, image,randomX, randomShift, randomDirection, globalPt, randomMS;
@@ -452,7 +476,7 @@ function build_Smoke(endPt){
             stage.removeChild(this);
         }
         
-        
+        //smoke bitmap visibility is decreased and object is moved upward
         b.fadeout = function(e){
             
             var randomMS;
@@ -471,9 +495,11 @@ function build_Smoke(endPt){
         //add to container
         stage.addChild(b);
     }//end if
-}
+}//end build_Smoke
 
-
+/*
+ Encapsulates all functionality needed to keep track of the rocket and the landing site and detect when a collision occurs. Collider also detects whether rocket landed or crashed.
+ */
 function build_Collider(){
     
     collider = new createjs.DisplayObject();
@@ -497,6 +523,7 @@ function build_Collider(){
         this.updateAltitude();
     }
     
+    //updates the store altitude values of both the rocket and landing site
     collider.updateAltitude = function(){
         this.rocketAltitude = rocket.y + rocket.centerToExtendedLegs;
         this.landingSiteAltitude = landingSite.y;
@@ -543,11 +570,13 @@ function build_Collider(){
         }//end if(goodYRange)
     }//end collider.update
     
+    //triggers functions from rocket and gameManager related to a landed rocket
     collider.rocketLanded = function(){
         rocket.land(landingSite.y);
         gameManager.restartGame();
     }
     
+    //triggers functions from rocket and gameManager related to a crashed rocket
     collider.rocketCrashed = function(){
         rocket.crash(landingSite.y);
         gameManager.restartGame();

@@ -77,6 +77,9 @@
         this.pauseScreen.visible = !this.pauseScreen.visible;
     };
 
+<<<<<<< HEAD
+}());
+=======
     guim.showLandedText = function() {
 
         this.landedText.visible = true;
@@ -98,3 +101,4 @@
     };
 
 }());
+>>>>>>> master

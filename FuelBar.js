@@ -48,6 +48,7 @@
          this.bar.graphics.beginFill(this.fillColor);
          this.bar.graphics.drawRect(0,0,this.width, this.height);
          this.bar.scaleX = 1;
+         this.bar.alpha = 0.7;
  
          //text
          this.label = new createjs.Text("", "24px Arial", this.strokeColor);
@@ -95,6 +96,10 @@
          
          this.label.text = m;
      }//end updateText
+
+    f.setLabel = function(text){
+         this.label.text = text;
+    }
  
  }()); //end IIFE
 

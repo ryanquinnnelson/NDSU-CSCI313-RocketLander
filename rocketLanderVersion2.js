@@ -49,12 +49,13 @@ function loadGame(){ //alert("loadGame()");
     build_LandingSite();
     build_BackgroundManager();
     build_Collider();
+    build_tempBar();
     build_GUIManager();
     build_GameManager();
     //build_Rect(0,0, 500, 500, "red"); //debug
     //build_Text();   //debug
-    build_tempBar();
-    stage.addChild(rocket, landingSite, guiManager.physText, guiManager.pauseScreen);
+
+    stage.addChild(rocket, landingSite, guiManager.physText, guiManager.pauseScreen, guiManager.bars);
 }
 
 function startGame(){
@@ -97,7 +98,7 @@ function gameRender(){
 
 function pause(){
     createjs.Ticker.paused = !createjs.Ticker.paused;
-    gameManager.paused = !gameManager.paused
+    gameManager.paused = !gameManager.paused;
     guiManager.switchPauseScreen();
     stage.update();
 }

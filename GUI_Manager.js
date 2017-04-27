@@ -40,6 +40,16 @@
         this.pauseScreen.addChild(pauseText);
         this.pauseScreen.visible = false;
 
+        //Fuel Bars
+        this.bars = new createjs.Container();
+        var monoBar = new FuelBar(700, 100, "#000000", "#000000");
+        var fuelBar = new FuelBar(700, 150, "#000000", "#000000");
+        bars.addChild(monoBar, fuelBar);
+
+
+
+
+
 
 
         this.loadScreen = new createjs.Container();
@@ -56,6 +66,10 @@
 
     guim.updatePhysText = function(input){
        this.physText.getChildByName("newText").text = input;
+    };
+
+    guim.updateBars = function() {
+
     };
 
     guim.switchPauseScreen = function(){

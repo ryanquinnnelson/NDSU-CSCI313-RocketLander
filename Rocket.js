@@ -800,5 +800,12 @@
  
          return s;
      }
+
+     r.getPhysText = function() {
+
+         return "Velocity(x): " + Number(rocket.velocityX).toFixed(2) +"\nVelocity(y): "
+             + Number(rocket.velocityY).toFixed(2) + "\nRotation: " + r.nextA + "\nAltitude: "
+         + Number(1000 - r.nextY - 28).toFixed(2) + "m" + "\nThrust: " + r.engineLevel + "/4";
+     };
  
  }()); //end of IIFE

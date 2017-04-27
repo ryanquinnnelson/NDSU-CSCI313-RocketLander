@@ -49,13 +49,13 @@ function loadGame(){ //alert("loadGame()");
     build_LandingSite();
     build_BackgroundManager();
     build_Collider();
-    build_tempBar();
+   // build_tempBar();
     build_GUIManager();
     build_GameManager();
     //build_Rect(0,0, 500, 500, "red"); //debug
     //build_Text();   //debug
 
-    stage.addChild(rocket, landingSite, guiManager.physText, guiManager.pauseScreen, guiManager.bars);
+    stage.addChild(rocket, landingSite, guiManager.physText, guiManager.pauseScreen, guiManager.bars, guiManager.landedText);
 }
 
 function startGame(){
@@ -85,10 +85,10 @@ function gameUpdate(){
     rocket.update();
     collider.update();
     guiManager.updatePhysText(rocket.getPhysText());
-    
+    guiManager.updateBars(rocket.getMonoPercent(), rocket.getFuelPercent());
     //temporary
-    tempBar.updateText("mono", rocket.getMono(), rocket.getStartMono());
-    tempBar.updateFill(rocket.getMono() / rocket.getStartMono() );
+
+    //tempBar.updateFill(rocket.getMono() / rocket.getStartMono() );
     //diagText.text = rocket.toString();
 }
 
@@ -330,8 +330,9 @@ function build_LandingSite(){
         gco = landingSite.drawRect; //reference to Graphics.Rect gco
         gco.w = w;
        // gco.h = h;    //height doesn't change
-        gco.x = x;
+
         this.width = w;
+        this.x = x;
     }
     
     landingSite.show = function(){
@@ -597,6 +598,7 @@ function build_Collider(){
     //triggers functions from rocket and gameManager related to a landed rocket
     collider.rocketLanded = function(){
         rocket.land(landingSite.y);
+        guiManager.showLandedText();
         gameManager.restartGame();
     }
     
@@ -628,6 +630,7 @@ function build_GameManager(){
                 gameUpdate();
                 gameRender();
             }
+            console.log(landingSite.width, "   ", landingSite.x);
             
             stage.update();
         }

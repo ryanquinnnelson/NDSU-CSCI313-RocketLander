@@ -13,7 +13,7 @@ const W_KEY = 87;
 var rocket_sheet, fire_sheet, thruster_sheet;
 var stage, queue;                               //required for createjs
 var rocket, landingSite;                        //game objects
-var collider, gameManager, backgroundManager, guiManager;   //encapsulated objects
+var collider, gameManager, backgroundManager;   //encapsulated objects
 var diagText, tempBar;
 
 
@@ -30,8 +30,7 @@ function load(){
         {id: "ocean", src: "Assets/Ocean.png"},
         {id: "earth", src: "Assets/Earth2.png"},
         {id: "earthslice", src: "Assets/EarthSlice.png"},
-        {id: "oceanslice", src: "Assets/OceanSlice.png"},
-        {id: "pauseScreen", src: "Assets/PauseScreen2.png"}
+        {id: "oceanslice", src: "Assets/OceanSlice.png"}
     ]);
 }
 
@@ -49,12 +48,11 @@ function loadGame(){ //alert("loadGame()");
     build_LandingSite();
     build_BackgroundManager();
     build_Collider();
-    build_GUIManager();
     build_GameManager();
     //build_Rect(0,0, 500, 500, "red"); //debug
-    //build_Text();   //debug
+    build_Text();   //debug
     build_tempBar();
-    stage.addChild(rocket, landingSite, guiManager.physText, guiManager.pauseScreen);
+    stage.addChild(rocket, landingSite);
 }
 
 function startGame(){
@@ -83,12 +81,11 @@ function gameUpdate(){
     }
     rocket.update();
     collider.update();
-    guiManager.updatePhysText(rocket.getPhysText());
     
     //temporary
     tempBar.updateText("mono", rocket.getMono(), rocket.getStartMono());
     tempBar.updateFill(rocket.getMono() / rocket.getStartMono() );
-    //diagText.text = rocket.toString();
+    diagText.text = rocket.toString();
 }
 
 function gameRender(){
@@ -97,9 +94,6 @@ function gameRender(){
 
 function pause(){
     createjs.Ticker.paused = !createjs.Ticker.paused;
-    gameManager.paused = !gameManager.paused
-    guiManager.switchPauseScreen();
-    stage.update();
 }
 
 //=================================================================================//
@@ -134,7 +128,7 @@ function detectKey(e){ //alert("detectKey()");
             rocket.decreaseEngineLevel();
             break;
         case RIGHT_ARROW:
-            backgroundManager.switchLevel();     //changes game level
+            //changeLevel();      //changes game level
             break;
         case SPACEBAR:
             pause();            //pauses the game
@@ -392,24 +386,7 @@ function build_BackgroundManager(){
     //add to stage
     stage.addChildAt(earth, ocean, 0);
     stage.addChild(earthSlice, oceanSlice);
-
-    backgroundManager.current = 0;
-
-    backgroundManager.switchLevel = function(){
-        if(gameManager.paused){
-            if(this.current === 0){
-                this.show(1);
-                this.current = 1;
-                landingSite.redraw(1);
-            } else {
-                this.show(0);
-                this.current = 0;
-                landingSite.redraw(0);
-            }
-            stage.update();
-        }
-
-    }
+    
     
     //function used to change the visibility of the background object based on level
     backgroundManager.show = function(level){
@@ -606,10 +583,6 @@ function build_Collider(){
     }
 }
 
-function build_GUIManager(){
-    guiManager = new objects.GUI_Manager();
-}
-
 function build_GameManager(){
 
     gameManager = new createjs.DisplayObject();
@@ -617,7 +590,6 @@ function build_GameManager(){
     //properties
     gameManager.count = 0;
     gameManager.gameover = false;
-    gameManager.paused = createjs.Ticker.paused;
     
     gameManager.gameStep = function(e){
         
@@ -644,7 +616,7 @@ function build_GameManager(){
         if(gameManager.count === 1){
             
             //wait 2 seconds, then reset game
-            createjs.Tween.get(guiManager.physText).to({rotation: 0}, 2500).call(gameManager.reset);
+            createjs.Tween.get(diagText).to({rotation: 0}, 2500).call(gameManager.reset);
         }
     }
     

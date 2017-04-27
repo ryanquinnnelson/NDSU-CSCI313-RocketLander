@@ -11,7 +11,7 @@ const S_KEY = 83;
 const W_KEY = 87;
 
 var rocket_sheet, fire_sheet, thruster_sheet;
-var stage, queue;                               //required for createjs
+var stage, queue;                               //required for createjs library
 var rocket, landingSite;                        //game objects
 var collider, gameManager, backgroundManager, gui;   //encapsulated objects
 var diagText, tempBar;

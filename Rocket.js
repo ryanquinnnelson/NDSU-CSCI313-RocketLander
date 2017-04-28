@@ -252,7 +252,7 @@
  
      //engineLevel
      r.getEngineLevel = function(){
-        return r.engineLevel;
+        return r.thrustLevel;
      }
  
      //sets engine level

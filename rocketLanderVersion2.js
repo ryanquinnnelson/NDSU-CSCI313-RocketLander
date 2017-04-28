@@ -309,7 +309,7 @@ function build_LandingSite(){
     
     //Shape
     landingSite = new createjs.Shape();
-    landingSite.visible = true;
+    landingSite.visible = false;
     
     //createjs properties
     landingSite.graphics.beginFill("green").drawRect(0, 0, START_W, START_H);

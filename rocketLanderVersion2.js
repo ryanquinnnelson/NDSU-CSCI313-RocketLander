@@ -340,9 +340,9 @@ function build_LandingSite(){
         gco = landingSite.drawRect; //reference to Graphics.Rect gco
         gco.w = w;
        // gco.h = h;    //height doesn't change
-        gco.x = x;
+        //gco.x = x;
         this.width = w;
-        //this.x = x;
+        this.x = x;
     }
     
     landingSite.show = function(){

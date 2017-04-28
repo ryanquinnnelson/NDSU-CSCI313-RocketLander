@@ -13,7 +13,7 @@ const W_KEY = 87;
 var rocket_sheet, fire_sheet, thruster_sheet;
 var stage, queue;                               //required for createjs library
 var rocket, landingSite;                        //game objects
-var collider, gameManager, backgroundManager, gui;   //encapsulated objects
+var collider, gameManager, backgroundManager, guiManager;   //encapsulated objects
 var diagText, tempBar;
 
 
@@ -50,15 +50,15 @@ function loadGame(){ //alert("loadGame()");
     build_BackgroundManager();
     build_Collider();
     //build_tempBar();
-    build_GUI();
+    //build_GUI();
     //build_tempBar();
-    //build_GUIManager();
+    build_GUIManager();
 
     build_GameManager();
     //build_Rect(0,0, 500, 500, "red"); //debug
     build_Text();   //debug
-    stage.addChild(rocket, landingSite, gui);
-    //stage.addChild(rocket, landingSite, guiManager.physText, guiManager.pauseScreen, guiManager.bars, guiManager.landedText);
+    //stage.addChild(rocket, landingSite, gui);
+    stage.addChild(rocket, landingSite, guiManager.physText, guiManager.pauseScreen, guiManager.bars, guiManager.landedText);
 
 }
 
@@ -89,13 +89,13 @@ function gameUpdate(){
     rocket.update();
     collider.update();
 
-    gui.update();
+    //gui.update();
     
     //temporary
     //diagText.text = rocket.toString();
 
-    //guiManager.updatePhysText(rocket.getPhysText());
-    //guiManager.updateBars(rocket.getMonoPercent(), rocket.getFuelPercent());
+    guiManager.updatePhysText(rocket.getPhysText());
+    guiManager.updateBars(rocket.getMonoPercent(), rocket.getFuelPercent());
     //temporary
 
     //tempBar.updateFill(rocket.getMono() / rocket.getStartMono() );
@@ -109,7 +109,7 @@ function gameRender(){
 function pause(){
     createjs.Ticker.paused = !createjs.Ticker.paused;
     gameManager.paused = !gameManager.paused;
-    gui.togglePauseScreen();
+    guiManager.switchPauseScreen();
     stage.update();
 }
 
@@ -340,9 +340,9 @@ function build_LandingSite(){
         gco = landingSite.drawRect; //reference to Graphics.Rect gco
         gco.w = w;
        // gco.h = h;    //height doesn't change
-
+        gco.x = x;
         this.width = w;
-        this.x = x;
+        //this.x = x;
     }
     
     landingSite.show = function(){
@@ -619,6 +619,11 @@ function build_Collider(){
     }
 }
 
+function build_GUIManager(){
+    guiManager = new objects.GUI_Manager();
+}
+
+/*
 function build_GUI(){
     
     var image;
@@ -627,6 +632,7 @@ function build_GUI(){
     
     gui = new objects.GUI(image);
 }
+ */
 
 function build_GameManager(){
 

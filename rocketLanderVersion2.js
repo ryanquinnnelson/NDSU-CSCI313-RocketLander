@@ -651,7 +651,7 @@ function build_GameManager(){
                 gameUpdate();
                 gameRender();
             }
-            console.log(landingSite.width, "   ", landingSite.x);
+            console.log(guiManager.landedText.height + "   " + guiManager.landedText.width);
             
             stage.update();
         }
@@ -722,7 +722,6 @@ function build_tempBar(){
     tempBar = new objects.FuelBar(750,50,"green", "black");
     stage.addChild(tempBar);
 }
-
 
 
 /*

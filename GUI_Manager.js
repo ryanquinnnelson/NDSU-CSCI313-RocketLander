@@ -79,10 +79,10 @@
 
     guim.showLandedText = function() {
 
+        createjs.Ticker.paused = true;
         this.landedText.visible = true;
-        console.log("Visible: " + this.landedText.visible, "X: " + this.landedText.x, "Y: " + this.landedText.y +"\n" + stage.children);
 
-        createjs.Tween.get(this.landedText, ignoreGlobalPause)
+        createjs.Tween.get(this.landedText, {ignoreGlobalPause:true} )
             .to({alpha:.6}, 300)
             .wait(100)
             .to({alpha:1}, 300)
@@ -92,9 +92,10 @@
             .to({alpha:.6}, 300)
             .wait(100)
             .to({alpha:1}, 300)
-            .to({visible:false}, 0);
+            .to({visible:false}, 0)
+            .wait(2000);
 
-
+        createjs.Ticker.paused = false;
     };
 
 }());

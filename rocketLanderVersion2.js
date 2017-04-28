@@ -13,7 +13,7 @@ const W_KEY = 87;
 var rocket_sheet, fire_sheet, thruster_sheet;
 var stage, queue;                               //required for createjs library
 var rocket, landingSite;                        //game objects
-var collider, gameManager, backgroundManager, gui;   //encapsulated objects
+var collider, gameManager, backgroundManager, guiManager;   //encapsulated objects
 var diagText, tempBar;
 
 
@@ -109,7 +109,7 @@ function gameRender(){
 function pause(){
     createjs.Ticker.paused = !createjs.Ticker.paused;
     gameManager.paused = !gameManager.paused;
-    gui.togglePauseScreen();
+    guiManager.switchPauseScreen();
     stage.update();
 }
 
@@ -619,6 +619,11 @@ function build_Collider(){
     }
 }
 
+function build_GUIManager(){
+    guiManager = new objects.GUI_Manager();
+}
+
+/*
 function build_GUI(){
     
     var image;
@@ -627,6 +632,7 @@ function build_GUI(){
     
     gui = new objects.GUI(image);
 }
+ */
 
 function build_GameManager(){
 

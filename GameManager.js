@@ -4,6 +4,8 @@
 
 (function () {
 
+
+
     const SPACEBAR = 32;
     const LEFT_ARROW = 37;
     const UP_ARROW = 38;
@@ -48,7 +50,7 @@
                 this.dKeyDown = true;
                 break;
             case UP_ARROW:
-                rocket.increaseEngineLevel();
+                window.objects.Rocket.increaseEngineLevel();
                 break;
             case DOWN_ARROW:
                 rocket.decreaseEngineLevel();
@@ -77,9 +79,7 @@
         collider.update();
 
         //temporary
-        tempBar.updateText("mono", rocket.getMono(), rocket.getStartMono());
-        tempBar.updateFill(rocket.getMono() / rocket.getStartMono() );
-        diagText.text = rocket.toString();
+
 
         rocket.render();
 

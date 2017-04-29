@@ -58,7 +58,7 @@ function loadGame(){ //alert("loadGame()");
     //build_Rect(0,0, 500, 500, "red"); //debug
     build_Text();   //debug
     //stage.addChild(rocket, landingSite, gui);
-    stage.addChild(landingSite, guiManager.physText, guiManager.pauseScreen, guiManager.bars, guiManager.landedText);
+    stage.addChild(landingSite, guiManager);
     //alert(stage.children);
 }
 

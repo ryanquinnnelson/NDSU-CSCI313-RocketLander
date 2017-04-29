@@ -41,6 +41,7 @@ function load(){
 function init(){
     loadGame();
     startGame();
+    guiManager.loadAnimation();
 }
 
 
@@ -68,6 +69,7 @@ function startGame(){
 
     //Ticker object
     createjs.Ticker.framerate = 60;
+
     createjs.Ticker.addEventListener("tick", gameManager.gameStep);
     
     //listen for key / mouse events
@@ -270,10 +272,7 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
     data = {
         images: [image],
         frames:{width: 96, height: 96, spacing: 0, count: 12, margin: 0},
-        animations: {
-            boom: [0, 11, .1]                    //continuous animation
-        },
-        framerate: 30//end animations
+        animations: { boom: [0, 11, "boom", .25]}
     }; //end data
 
     explosion_sheet = new createjs.SpriteSheet(data);
@@ -601,7 +600,7 @@ function build_Collider(){
             
             //checklist for proper landing
             goodRotation  = Math.abs(rocket.rotation) < 5; //rotation < 5 degrees
-            goodYSpeed    = Math.abs(rocket.velocityY) < 10; //speed < 10 m/s
+            goodYSpeed    = Math.abs(rocket.velocityY) < 5; //speed < 10 m/s
             goodXSpeed    = Math.abs(rocket.velocityX) < 10;
             
             //rocket horizontally in correct location
@@ -626,14 +625,14 @@ function build_Collider(){
     collider.rocketLanded = function(){
         rocket.land(landingSite.y);
         guiManager.showLandedText();
-        gameManager.restartGame();
+        setTimeout(gameManager.restartGame(), 1000);
     }
     
     //triggers functions from rocket and gameManager related to a crashed rocket
     collider.rocketCrashed = function(){
         rocket.crash(landingSite.y);
         guiManager.explode(rocket.x);
-        gameManager.restartGame();
+        setTimeout(gameManager.restartGame(), 1000);
     }
 }
 
@@ -738,6 +737,15 @@ function build_Text(){
 function build_tempBar(){
     tempBar = new objects.FuelBar(750,50,"green", "black");
     stage.addChild(tempBar);
+}
+
+function sleep(duration) {
+    var start = new Date().getTime();
+    for (var i = 0; i < 1e7; i++) {
+        if ((new Date().getTime() - start) > milliseconds){
+            break;
+        }
+    }
 }
 
 

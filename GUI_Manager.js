@@ -11,6 +11,9 @@
 
         this.DisplayObject_constructor();
 
+        this.loadScreen = new createjs.Bitmap("Assets/Loading2.png");
+
+
         // Physics Text
         this.physText = new createjs.Container();
 
@@ -60,8 +63,9 @@
         pauseHint.set({x:810, y:8});
 
         this.explosion = new createjs.Sprite(explosion_sheet, "boom");
-        this.explosion.y = 1000;
-        this.explosion.set({scaleX: 2, scaleY: 2});
+        this.explosion.set({regX: 32}, {regY:32});
+        this.explosion.y = 800;
+        this.explosion.set({scaleX: 5, scaleY: 5});
         this.explosion.visible = false;
 
         this.crashedText = new createjs.Text("CRASHED!", "140px Impact", "#f00911");
@@ -71,7 +75,7 @@
 
 
 
-        stage.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physText, this.bars, this.pauseScreen,  pauseHint);
+        stage.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physText, this.bars, this.pauseScreen,  pauseHint, this.loadScreen);
 
     };
 
@@ -114,8 +118,7 @@
             .to({alpha:.6}, 300)
             .wait(100)
             .to({alpha:1}, 300)
-            .to({visible:false}, 0)
-            .wait(2000);
+            .to({visible:false}, 0);
 
         createjs.Ticker.paused = false;
     };
@@ -127,7 +130,7 @@
 
         this.explosion.gotoAndPlay("boom");
         createjs.Tween.get(this.explosion)
-            .to({visible: false}, 2000);
+            .to({visible: false}, 900);
 
         this.crashedText.visible = true;
 
@@ -141,12 +144,13 @@
             .to({alpha:.6}, 300)
             .wait(100)
             .to({alpha:1}, 300)
-            .to({visible:false}, 0)
-            .wait(2000);
+            .to({visible:false}, 0);
     };
 
-    guim.removeExplosion = function() {
-        this.explosion.visible = false;
-    };
+    guim.loadAnimation = function() {
+
+        createjs.Tween.get(this.loadScreen).wait(1000).to({alpha:0}, 1000).wait(500);
+
+    }
 
 }());

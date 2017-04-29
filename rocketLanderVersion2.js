@@ -10,7 +10,7 @@ const D_KEY = 68;
 const S_KEY = 83;
 const W_KEY = 87;
 
-var rocket_sheet, fire_sheet, thruster_sheet;
+var rocket_sheet, fire_sheet, thruster_sheet, explosion_sheet;
 var stage, queue;                               //required for createjs library
 var rocket, landingSite;                        //game objects
 var collider, gameManager, backgroundManager, guiManager;   //encapsulated objects
@@ -31,7 +31,9 @@ function load(){
         {id: "earth", src: "Assets/Earth2.png"},
         {id: "earthslice", src: "Assets/EarthSlice.png"},
         {id: "oceanslice", src: "Assets/OceanSlice.png"},
-        {id: "pauseScreen", src: "Assets/PauseScreen2.png"}
+        {id: "pauseScreen", src: "Assets/PauseScreen2.png"},
+        {id: "loadScreen", src: "Assets/Loading2.png"},
+        {id: "explosion", src: "Assets/Explosion.png"}
     ]);
 }
 
@@ -253,7 +255,7 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
     //generic object
     data = {
         images: [image],
-        frames:{width: 50, height: 75, spacing: 0, count: 6, margin: 0},
+        frames:{width:50, height: 75, spacing: 0, count: 6, margin: 0},
         animations: {
             noThrust: 5,                                    //empty frame only
             thrust: [0,4, "thrust", 0.3]                    //continuous animation
@@ -262,11 +264,24 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
     
     //SpriteSheet object
     thruster_sheet = new createjs.SpriteSheet(data);
+
+    image = queue.getResult("explosion");
+
+    data = {
+        images: [image],
+        frames:{width: 96, height: 96, spacing: 0, count: 12, margin: 0},
+        animations: {
+            boom: [0, 11, .1]                    //continuous animation
+        },
+        framerate: 30//end animations
+    }; //end data
+
+    explosion_sheet = new createjs.SpriteSheet(data);
 }//end buildSpriteSheets()
 
 
 /*
- Performs all operations necessary to instantiate the Rocket object and position it within the stage.
+ Performs all operations necessary to instantiate the rocket object and position it within the stage.
  
  Each time the rocket is built, function calculates a random horizontal position and angle.
  */
@@ -540,7 +555,7 @@ function build_Smoke(endPt){
 function build_Collider(){
     
     collider = new createjs.DisplayObject();
-    
+
     //injected properties
     //variables
     collider.rocketAltitude;    //height above bottom of stage in pixels
@@ -617,6 +632,7 @@ function build_Collider(){
     //triggers functions from rocket and gameManager related to a crashed rocket
     collider.rocketCrashed = function(){
         rocket.crash(landingSite.y);
+        guiManager.explode(rocket.x);
         gameManager.restartGame();
     }
 }
@@ -653,7 +669,6 @@ function build_GameManager(){
                 gameUpdate();
                 gameRender();
             }
-            console.log(guiManager.landedText.height + "   " + guiManager.landedText.width);
             
             stage.update();
         }

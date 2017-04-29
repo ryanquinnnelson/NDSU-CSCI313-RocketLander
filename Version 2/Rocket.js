@@ -1,5 +1,5 @@
 //Rocket.js
-//Rocket object encapsulated in an IIFE (Immediately Invoked Functional Expression)
+//rocket object encapsulated in an IIFE (Immediately Invoked Functional Expression)
 //IIFE contains all behavior and objects that compose the rocket
 
 (function () {
@@ -37,10 +37,10 @@
     }
  
      //extend Container and return prototype of new class
-     var r = createjs.extend(Rocket, createjs.Container);
+     var r = createjs.extend(rocket, createjs.Container);
  
      //promote overridden attributes and add new class to namespace
-     window.objects.Rocket = createjs.promote(Rocket, "Container");
+     window.objects.rocket = createjs.promote(rocket, "Container");
  
  
      //inject attributes (properties and methods)
@@ -229,7 +229,7 @@
  
  
      //==========================================================================//
-     //                          Rocket Property Functions                       //
+     //                          rocket Property Functions                       //
      //==========================================================================//
  
      //velocity
@@ -463,7 +463,7 @@
      //==========================================================================//
      //                             Listener Functions                           //
      //==========================================================================//
-     //add function definition to a particular Rocket event
+     //add function definition to a particular rocket event
      r.addToListener = function(event, func){
          switch(event){
              case "leftThrusterFiring":

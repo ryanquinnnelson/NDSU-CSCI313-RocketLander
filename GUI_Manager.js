@@ -46,11 +46,11 @@
         //Main engine fuel bar
         var fuelBar = new window.objects.FuelBar(750, 110, "#0A6FB4", "#000000");
         fuelBar.name = "fuelBar";
-        fuelBar.setLabel("Rocket Fuel");
+        fuelBar.setLabel("rocket Fuel");
         this.bars.addChild(monoBar, fuelBar);
 
         //Text displayed after successful landing.
-        this.landedText = new createjs.Text("LANDED!", "140px Impact", "#FF0911");
+        this.landedText = new createjs.Text("LANDED!", "140px Impact", "#0204fa");
         this.landedText.set({regX:(225), regY:(100)});
         this.landedText.set({x:600, y:600});
         this.landedText.visible = false;
@@ -59,9 +59,19 @@
         var pauseHint = new createjs.Text("Press Spacebar to pause.", "30px Arial", "#000000");
         pauseHint.set({x:810, y:8});
 
+        this.explosion = new createjs.Sprite(explosion_sheet, "boom");
+        this.explosion.y = 1000;
+        this.explosion.set({scaleX: 2, scaleY: 2});
+        this.explosion.visible = false;
 
-        stage.addChild(this.pauseScreen, this.landedText, this.physText, this.bars, this.pauseScreen,  pauseHint);
+        this.crashedText = new createjs.Text("CRASHED!", "140px Impact", "#f00911");
+        this.crashedText.set({regX:(275), regY:(100)});
+        this.crashedText.set({x:600, y:600});
+        this.crashedText.visible = false;
 
+
+
+        stage.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physText, this.bars, this.pauseScreen,  pauseHint);
 
     };
 
@@ -108,6 +118,35 @@
             .wait(2000);
 
         createjs.Ticker.paused = false;
+    };
+
+    guim.explode = function(x) {
+
+        this.explosion.x = x - 75;
+        this.explosion.visible = true;
+
+        this.explosion.gotoAndPlay("boom");
+        createjs.Tween.get(this.explosion)
+            .to({visible: false}, 2000);
+
+        this.crashedText.visible = true;
+
+        createjs.Tween.get(this.crashedText)
+            .to({alpha:.6}, 300)
+            .wait(100)
+            .to({alpha:1}, 300)
+            .to({alpha:.6}, 300)
+            .wait(100)
+            .to({alpha:1}, 300)
+            .to({alpha:.6}, 300)
+            .wait(100)
+            .to({alpha:1}, 300)
+            .to({visible:false}, 0)
+            .wait(2000);
+    };
+
+    guim.removeExplosion = function() {
+        this.explosion.visible = false;
     };
 
 }());

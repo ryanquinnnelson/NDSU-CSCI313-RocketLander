@@ -13,12 +13,14 @@
 
         // Physics Text
         this.physText = new createjs.Container();
+
         //Background box
         var g = new createjs.Graphics().beginFill("#646464").drawRoundRect(0,0,250, 175, 5);
         var textBox = new createjs.Shape(g);
         textBox.alpha = 0.7;
         textBox.x = 900;
         textBox.y = 170;
+
         //Displayed text
         var newText = new createjs.Text("", "30px Arial", "#000000");
         newText.name = "newText";
@@ -35,6 +37,7 @@
 
         //Fuel Bars
         this.bars = new createjs.Container();
+
         //Monopropellant bar
         var monoBar = new window.objects.FuelBar(750, 50, "#FA0A20", "#000000");
         monoBar.name = "monoBar";
@@ -51,6 +54,14 @@
         this.landedText.set({regX:(225), regY:(100)});
         this.landedText.set({x:600, y:600});
         this.landedText.visible = false;
+
+        //Pause hint
+        var pauseHint = new createjs.Text("Press Spacebar to pause.", "30px Arial", "#000000");
+        pauseHint.set({x:810, y:8});
+
+
+        stage.addChild(this.pauseScreen, this.landedText, this.physText, this.bars, this.pauseScreen,  pauseHint);
+
 
     };
 

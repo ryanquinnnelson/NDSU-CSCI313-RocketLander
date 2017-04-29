@@ -41,6 +41,7 @@
  
      //promote overridden attributes and add new class to namespace
      window.objects.Rocket = createjs.promote(Rocket, "Container");
+     window.Rocket = createjs.promote(Rocket,"Container");
  
  
      //inject attributes (properties and methods)

@@ -30,8 +30,8 @@ function load(){
         {id: "earth", src: "Assets/Earth2.png"},
         {id: "earthslice", src: "Assets/EarthSlice.png"},
         {id: "oceanslice", src: "Assets/OceanSlice.png"},
-        {id: "pauseScreen", src: "Assets/PauseScreen2.png"},
-        {id: "loadScreen", src: "Assets/Loading.png"},
+        {id: "pauseScreen", src: "Assets/PauseScreen.png"},
+        {id: "loadScreen", src: "Assets/Loading2.png"},
         {id: "explosion", src: "Assets/Explosion2.png"}
     ]);
 }

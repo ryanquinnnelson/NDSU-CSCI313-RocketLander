@@ -155,7 +155,7 @@
             .to({visible:false}, 0);
     };
 
-    guim.loadAnimation = function() {
+    guim.loadAnimation = function(gameManager) {
 
         createjs.Tween.get(this.loadScreen).wait(1000).to({alpha:0}, 1000).wait(500).call(gameManager.reset);
 

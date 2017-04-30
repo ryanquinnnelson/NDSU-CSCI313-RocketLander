@@ -1,18 +1,27 @@
 //rocketLanderVersion2.js
 
+//global variables
 var rocket_sheet, fire_sheet, thruster_sheet, explosion_sheet;
 var stage, queue;              //required for createjs library
 var rocket, landingSite;       //game objects
+var collider;                  //checks rocket and landing site for collisions
+var GM;                        //game manager
+var BM;                        //background manager
+var guiManager;                //GUI manager
+var IM;                        //input manager
 
-//encapsulated objects
-var collider, gameManager, backgroundManager, guiManager, inputManager;
 
-var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
+//=================================================================================//
+//                                   Startup                                       //
+//=================================================================================//
 
+/*
+ loads images, stores data in objects for later ref
+ */
 function load(){
     queue = new createjs.LoadQueue(false);
     queue.on("complete", init, once=true);
-    queue.loadManifest([    //loads images, stores data in objects for later ref
+    queue.loadManifest([
         {id: "falcon9", src: "Assets/Falcon9_2.png"},
         {id: "falcon9fire", src: "Assets/Falcon9Fire.png"},
         {id: "falcon9thrusters", src: "Assets/Falcon9Thrusters2.png"},
@@ -53,29 +62,20 @@ function loadGame(){ //alert("loadGame()");
     stage.addChild(landingSite, guiManager);
     
     //show load screen
-    guiManager.loadAnimation();
+    guiManager.loadAnimation(GM);
 }
 
 function startGame(){
 
     //Ticker object
     createjs.Ticker.framerate = 60;
-    createjs.Ticker.addEventListener("tick", gameManager.gameStep);
+    createjs.Ticker.addEventListener("tick", GM.gameStep);
     
     //listen for key / mouse events
-    window.onkeydown  = inputManager.detectKey;  //calls detectKey() for "keydown" event
-    window.onkeyup = inputManager.removeKey;     //calls removeKey() for "keyup" event
+    window.onkeydown  = IM.detectKey;  //calls detectKey() for "keydown" event
+    window.onkeyup = IM.removeKey;     //calls removeKey() for "keyup" event
 }
 
-
-function pause(){
-    
-    createjs.Ticker.paused = !createjs.Ticker.paused;
-    gameManager.paused = !gameManager.paused;
-    guiManager.switchPauseScreen();
-    
-    stage.update();
-}
 
 
 //=================================================================================//
@@ -287,7 +287,7 @@ function build_BackgroundManager(){
     
     var ocean, earth, oceanSlice, earthSlice;
     
-    backgroundManager = new createjs.DisplayObject();
+    BM = new createjs.DisplayObject();
     
     //build Earth background
     //HTML image element
@@ -331,9 +331,7 @@ function build_BackgroundManager(){
     stage.addChildAt(earth, ocean, 0);
     stage.addChild(earthSlice, oceanSlice);
 
-    backgroundManager.current = 0;
-
-    backgroundManager.setBackground = function(level){
+    BM.setBackground = function(level){
         
         var currentBackground, currentSlice, nextBackground, nextSlice;
         
@@ -435,22 +433,23 @@ function build_Collider(){
         }//end if(goodYRange)
     }//end collider.update
     
-    //triggers functions from rocket and gameManager related to a landed rocket
+    //triggers functions from rocket and GM related to a landed rocket
     collider.rocketLanded = function(){
         rocket.land(landingSite.y);
         guiManager.showLandedText();
-        setTimeout(gameManager.restartGame(), 1000);
+        setTimeout(GM.restartGame(), 1000);
     }
     
-    //triggers functions from rocket and gameManager related to a crashed rocket
+    //triggers functions from rocket and GM related to a crashed rocket
     collider.rocketCrashed = function(){
         rocket.crash(landingSite.y);
         guiManager.explode(rocket.x);
-        setTimeout(gameManager.restartGame(), 1000);
+        setTimeout(GM.restartGame(), 1000);
     }
 }
 
 function build_GUIManager(){
+    
     guiManager = new objects.GUI_Manager();
 }
 
@@ -468,25 +467,28 @@ function build_InputManager(){
     const S_KEY = 83;
     const W_KEY = 87;
     
-    inputManager = new createjs.DisplayObject();
+    IM = new createjs.DisplayObject();
     
     /*
      Changes flags for movement control based on keyboard input.
      Calls certain methods for other keyboard input.
      */
-    inputManager.detectKey = function(e){
+    IM.detectKey = function(e){
         //type check for known browser issues
         e = !e ? window.event : e; //if event is not event, get window.event;
         
         switch(e.keyCode) {
             case W_KEY:
-                wKeyDown = true;
+                //wKeyDown = true;
+                GM.set_wKeyDown(true);
                 break;
             case A_KEY:
-                aKeyDown = true;
+                //aKeyDown = true;
+                GM.set_aKeyDown(true);
                 break;
             case D_KEY:
-                dKeyDown = true;
+                //dKeyDown = true;
+                GM.set_dKeyDown(true);
                 break;
             case UP_ARROW:
                 rocket.increaseEngineLevel();
@@ -495,10 +497,10 @@ function build_InputManager(){
                 rocket.decreaseEngineLevel();
                 break;
             case RIGHT_ARROW:
-                gameManager.switchLevel();     //changes game level
+                GM.switchLevel();     //changes game level
                 break;
             case SPACEBAR:
-                pause();                            //pauses the game
+                GM.pause();           //pauses or unpauses the game
                 break;
         }//end switch
     }//end detectKey
@@ -506,21 +508,24 @@ function build_InputManager(){
     /*
      Changes flags for movement control based on keyboard input.
      */
-    inputManager.removeKey = function(e){
+    IM.removeKey = function(e){
         //type check for known browser issues
         e = !e ? window.event : e;  //if event is not event, get window.event;
         
         switch(e.keyCode) {
             case W_KEY:
-                wKeyDown = false;    //flag for movement
+                //wKeyDown = false;    //flag for movement
+                GM.set_wKeyDown(false);
                 rocket.cutoutEngine();
                 break;
             case A_KEY:
-                aKeyDown = false;
+                //aKeyDown = false;
+                GM.set_aKeyDown(false);
                 rocket.cutoutLeftThruster();
                 break;
             case D_KEY:
-                dKeyDown = false;
+                //dKeyDown = false;
+                GM.set_dKeyDown(false);
                 rocket.cutoutRightThruster();
                 break;
         }//end switch
@@ -530,36 +535,39 @@ function build_InputManager(){
 
 function build_GameManager(){
 
-    gameManager = new createjs.DisplayObject();
+    GM = new createjs.DisplayObject();
     
     //properties
-    gameManager.count = 0;
-    gameManager.gameover = true;
-    //gameManager.paused = createjs.Ticker.paused;
-    gameManager.level = 0;
+    GM.count = 0;
+    GM.gameover = true;
+    //GM.paused = createjs.Ticker.paused;
+    GM.level = 0;
+    GM.wKeyDown = false;
+    GM.aKeyDown = false;
+    GM.dKeyDown = false;
     
-    gameManager.gameStep = function(e){
+    GM.gameStep = function(e){
         
         if(!createjs.Ticker.paused){
             
-            if(!gameManager.gameover){
-                gameManager.gameUpdate();
-                gameManager.gameRender();
+            if(!GM.gameover){
+                GM.gameUpdate();
+                GM.gameRender();
             }
             
             stage.update();
         }
     }
     
-    gameManager.gameUpdate = function(){
+    GM.gameUpdate = function(){
         
-        if(wKeyDown){
+        if(GM.wKeyDown){
             rocket.fireEngine();
         }
-        if(aKeyDown){
+        if(GM.aKeyDown){
             rocket.fireLeftThruster();
         }
-        if(dKeyDown){
+        if(GM.dKeyDown){
             rocket.fireRightThruster();
         }
         
@@ -568,41 +576,61 @@ function build_GameManager(){
         guiManager.update(rocket);
     }
     
-    gameManager.gameRender = function(){
+    GM.gameRender = function(){
         rocket.render();
     }
     
-    gameManager.restartGame = function(){
+    GM.restartGame = function(){
         
-        gameManager.count++;
-        gameManager.gameover = true;
+        GM.count++;
+        GM.gameover = true;
         
         //window.removeEventListener("keydown", detectKey); //doesn't work
         //need to stop key access
         //wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
         
-        if(gameManager.count === 1){
+        if(GM.count === 1){
             
             //wait 2 seconds, then reset game
-            createjs.Tween.get(collider).to({rotation:0}, 2500).call(gameManager.reset);
+            createjs.Tween.get(collider).to({rotation:0}, 2500).call(GM.reset);
         }
     }
     
-    gameManager.reset = function(){
+    GM.reset = function(){
 
-        gameManager.count = 0;
-        gameManager.gameover = false;
+        GM.count = 0;
+        GM.gameover = false;
 
         rocket.reset();
         build_Rocket();
     }
     
-    gameManager.switchLevel = function(){
+    GM.switchLevel = function(){
         
         if(createjs.Ticker.paused){
-            gameManager.level = (gameManager.level + 1) % 2;
-            backgroundManager.setBackground(gameManager.level);
+            GM.level = (GM.level + 1) % 2;
+            BM.setBackground(GM.level);
         }
+    }
+    
+    GM.set_wKeyDown = function(value){
+        GM.wKeyDown = value
+    }
+    
+    GM.set_aKeyDown = function(value){
+        GM.aKeyDown = value
+    }
+    
+    GM.set_dKeyDown = function(value){
+        GM.dKeyDown = value
+    }
+    
+    GM.pause = function(){
+        
+        createjs.Ticker.paused = !createjs.Ticker.paused;
+        guiManager.switchPauseScreen();
+        
+        stage.update();
     }
 }
 
@@ -746,7 +774,7 @@ function sleep(duration) {
  rocket.decreaseEngineLevel();
  break;
  case RIGHT_ARROW:
- backgroundManager.switchLevel();     //changes game level
+ BM.switchLevel();     //changes game level
  break;
  case SPACEBAR:
  pause();            //pauses the game
@@ -775,7 +803,7 @@ function sleep(duration) {
  }
  }
  
- backgroundManager.showEarthBackground = function(){
+ BM.showEarthBackground = function(){
  var background, slice;
  
  background = stage.getChildByName("earth");
@@ -785,7 +813,7 @@ function sleep(duration) {
  this.hideOceanBackground();
  }
  
- backgroundManager.hideEarthBackground = function(){
+ BM.hideEarthBackground = function(){
  var background, slice;
  
  background = stage.getChildByName("earth");
@@ -794,7 +822,7 @@ function sleep(duration) {
  background.visible = slice.visible = false;
  }
  
- backgroundManager.showOceanBackground = function(){
+ BM.showOceanBackground = function(){
  var background, slice;
  
  background = stage.getChildByName("ocean");
@@ -804,7 +832,7 @@ function sleep(duration) {
  this.hideEarthBackground();
  }
  
- backgroundManager.hideOceanBackground = function(){
+ BM.hideOceanBackground = function(){
  var background, slice;
  
  background = stage.getChildByName("ocean");
@@ -814,18 +842,18 @@ function sleep(duration) {
  }
  
  //function used to change the visibility of the background object based on level
- backgroundManager.show = function(level){
+ BM.show = function(level){
  switch(level){
  case 0:
- backgroundManager.showBackground("earth");
+ BM.showBackground("earth");
  break;
  case 1:
- backgroundManager.showBackground("ocean");
+ BM.showBackground("ocean");
  break;
  }//end switch
  }
  
- backgroundManager.showBackground = function(name){
+ BM.showBackground = function(name){
  
  var currentBackground, currentSlice, nextBackground, nextSlice;
  
@@ -847,6 +875,15 @@ function sleep(duration) {
  //alert(currentBackground +"," + currentSlice);
  nextBackground.visible = nextSlice.visible = true;
  currentBackground.visible = currentSlice.visible = false;
+ }
+ 
+ function pause(){
+ 
+ createjs.Ticker.paused = !createjs.Ticker.paused;
+ //GM.paused = !GM.paused;
+ guiManager.switchPauseScreen();
+ 
+ stage.update();
  }
 
 

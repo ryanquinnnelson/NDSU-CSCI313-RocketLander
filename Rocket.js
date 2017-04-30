@@ -377,6 +377,8 @@
          //display opening of landing legs again
          this.getChildByName("body").gotoAndPlay("deployFins");
          this.getChildByName("legs").gotoAndPlay("deployLegs");
+         this.getChildByName("thrusterL").gotoAndPlay("noThrust");
+         this.getChildByName("thrusterR").gotoAndPlay("noThrust");
  
          //event listeners
          //r.onLeftThrusterFiring = []; //store functions to call

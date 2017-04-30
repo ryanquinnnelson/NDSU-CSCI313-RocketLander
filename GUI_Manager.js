@@ -15,7 +15,7 @@
 
 
         // Physics Text
-        this.physText = new createjs.Container();
+        this.physBox = new createjs.Container();
 
         //Background box
         var g = new createjs.Graphics().beginFill("#646464").drawRoundRect(0,0,250, 175, 5);
@@ -32,7 +32,7 @@
         newText.name = "newText";
         newText.x = textBox.x + 10;
         newText.y = textBox.y + 10;
-        this.physText.addChild(textBox, newText);
+        this.physBox.addChild(textBox, newText);
 
         //Pause screen
         this.pauseScreen = new createjs.Bitmap("Assets/PauseScreen.png");
@@ -78,7 +78,7 @@
 
 
 
-        this.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physText, this.bars, this.pauseScreen,  pauseHint, this.loadScreen);
+        this.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physBox, this.bars, this.pauseScreen,  pauseHint, this.loadScreen);
 
     };
 
@@ -94,7 +94,7 @@
 
 
     guim.updatePhysText = function(input){
-        this.physText.getChildByName("newText").text = input;
+        this.physBox.getChildByName("newText").text = input;
     };
 
     guim.updateBars = function(monoPercent, fuelPercent) {

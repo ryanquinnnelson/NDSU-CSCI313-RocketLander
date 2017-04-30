@@ -7,7 +7,7 @@ var rocket, landingSite;       //game objects
 var collider;                  //checks rocket and landing site for collisions
 var GM;                        //game manager
 var BM;                        //background manager
-var guiManager;                //GUI manager
+var GUI;                //GUI manager
 var IM;                        //input manager
 
 
@@ -59,10 +59,10 @@ function loadGame(){ //alert("loadGame()");
     build_InputManager();
 
     //add to stage
-    stage.addChild(landingSite, guiManager);
+    stage.addChild(landingSite, GUI);
     
     //show load screen
-    guiManager.loadAnimation(GM);
+    GUI.loadAnimation(GM);
 }
 
 function startGame(){
@@ -439,21 +439,21 @@ function build_Collider(){
     //triggers functions from rocket and GM related to a landed rocket
     collider.rocketLanded = function(){
         rocket.land(landingSite.y);
-        guiManager.showLandedText();
+        GUI.showLandedText();
         setTimeout(GM.restartGame(), 1000);
     }
     
     //triggers functions from rocket and GM related to a crashed rocket
     collider.rocketCrashed = function(){
         rocket.crash(landingSite.y);
-        guiManager.explode(rocket.x);
+        GUI.explode(rocket.x);
         setTimeout(GM.restartGame(), 1000);
     }
 }
 
 function build_GUIManager(){
     
-    guiManager = new objects.GUI_Manager();
+    GUI = new objects.GUI_Manager();
 }
 
 function build_InputManager(){
@@ -576,7 +576,7 @@ function build_GameManager(){
         
         rocket.update();
         collider.update();
-        guiManager.update(rocket);
+        GUI.update(rocket);
     }
     
     GM.gameRender = function(){
@@ -632,7 +632,7 @@ function build_GameManager(){
     GM.pause = function(){
         
         createjs.Ticker.paused = !createjs.Ticker.paused;
-        guiManager.switchPauseScreen();
+        GUI.switchPauseScreen();
         
         stage.update();
     }

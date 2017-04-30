@@ -9,7 +9,7 @@
 
     function GUI_Manager(){
 
-        this.DisplayObject_constructor();
+        this.Container_constructor();
 
         this.loadScreen = new createjs.Bitmap("Assets/Loading2.png");
 
@@ -78,13 +78,13 @@
 
 
 
-        stage.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physText, this.bars, this.pauseScreen,  pauseHint, this.loadScreen);
+        this.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physText, this.bars, this.pauseScreen,  pauseHint, this.loadScreen);
 
     };
 
-    var guim = createjs.extend(GUI_Manager, createjs.DisplayObject);
+    var guim = createjs.extend(GUI_Manager, createjs.Container);
 
-    window.objects.GUI_Manager = createjs.promote(GUI_Manager, "DisplayObject");
+    window.objects.GUI_Manager = createjs.promote(GUI_Manager, "Container");
 
  
     guim.update = function(object){

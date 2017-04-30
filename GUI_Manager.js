@@ -49,7 +49,7 @@
         //Main engine fuel bar
         var fuelBar = new window.objects.FuelBar(750, 110, "#0A6FB4", "#000000");
         fuelBar.name = "fuelBar";
-        fuelBar.setLabel("rocket Fuel");
+        fuelBar.setLabel("Rocket Fuel");
         this.bars.addChild(monoBar, fuelBar);
 
         //Text displayed after successful landing.

@@ -69,6 +69,7 @@ function startGame(){
 
 
 function pause(){
+    
     createjs.Ticker.paused = !createjs.Ticker.paused;
     gameManager.paused = !gameManager.paused;
     guiManager.switchPauseScreen();
@@ -82,7 +83,8 @@ function pause(){
 //=================================================================================//
 
 /*
- Performs all operations necessary to build the data objects and spritesheets used in the game.
+ Performs all operations necessary to build the data objects 
+ and spritesheets used in the game.
  */
 function build_SpriteSheets(){ //alert("buildSpriteSheets()");
     
@@ -210,7 +212,8 @@ function build_Rocket(){ //alert("build");
 }//end build_Rocket
 
 /*
- Encapsulates all operations necessary to instantiate the landingSite and position it within the stage. Landing Site object contains all functionality and properties related to the landing site inside itself.
+ Encapsulates all operations necessary to instantiate the landingSite and position it within the stage. 
+ Landing Site object contains all functionality and properties related to the landing site inside itself.
  */
 function build_LandingSite(){
     
@@ -275,7 +278,10 @@ function build_LandingSite(){
 //=================================================================================//
 
 /*
- Encapsulates all operations necessary to build the backgrounds of the game as well as an object to manage them. Slices of the backgrounds are drawn in front of the rocket  to hide any flame extending below the landing site level. This gives the impression that the ground is solid.
+ Encapsulates all operations necessary to build the backgrounds of the game as well 
+ as an object to manage them. Slices of the backgrounds are drawn in front of the 
+ rocket to hide any flame extending below the landing site level. This gives the
+ impression that the ground is solid.
  */
 function build_BackgroundManager(){
     
@@ -327,77 +333,37 @@ function build_BackgroundManager(){
 
     backgroundManager.current = 0;
 
-    backgroundManager.switchLevel = function(){
-        if(gameManager.paused){
-            if(this.current === 0){
-                this.show(1);
-                this.current = 1;
-                landingSite.redraw(1);
-            } else {
-                this.show(0);
-                this.current = 0;
-                landingSite.redraw(0);
-            }
-            stage.update();
-        }
-
-    }
-    
-    //function used to change the visibility of the background object based on level
-    backgroundManager.show = function(level){
+    backgroundManager.setBackground = function(level){
+        
+        var currentBackground, currentSlice, nextBackground, nextSlice;
+        
         switch(level){
             case 0:
-                this.showEarthBackground();
+                currentBackground = stage.getChildByName("ocean");
+                currentSlice = stage.getChildByName("oceanslice");
+                nextBackground = stage.getChildByName("earth");
+                nextSlice = stage.getChildByName("earthslice");
                 break;
+                
             case 1:
-                this.showOceanBackground();
+                currentBackground = stage.getChildByName("earth");
+                currentSlice = stage.getChildByName("earthslice");
+                nextBackground = stage.getChildByName("ocean");
+                nextSlice = stage.getChildByName("oceanslice");
                 break;
         }//end switch
-    }
-    
-    backgroundManager.showEarthBackground = function(){
-        var background, slice;
         
-        background = stage.getChildByName("earth");
-        slice = stage.getChildByName("earthslice");
+        nextBackground.visible = nextSlice.visible = true;
+        currentBackground.visible = currentSlice.visible = false;
         
-        background.visible = slice.visible = true;
-        this.hideOceanBackground();
-    }
-    
-    //unnecessary method
-    backgroundManager.hideEarthBackground = function(){
-        var background, slice;
-        
-        background = stage.getChildByName("earth");
-        slice = stage.getChildByName("earthslice");
-        
-        background.visible = slice.visible = false;
-    }
-    
-    backgroundManager.showOceanBackground = function(){
-        var background, slice;
-        
-        background = stage.getChildByName("ocean");
-        slice = stage.getChildByName("oceanslice");
-        
-        background.visible = slice.visible = true;
-        this.hideEarthBackground();
-    }
-    
-    //unnecessary method
-    backgroundManager.hideOceanBackground = function(){
-        var background, slice;
-        
-        background = stage.getChildByName("ocean");
-        slice = stage.getChildByName("oceanslice");
-        
-        background.visible = slice.visible = false;
-    }
+        stage.update();
+    }//end setBackground
 }
 
 /*
- Encapsulates all functionality needed to keep track of the rocket and the landing site and detect when a collision occurs. Collider also detects whether rocket landed or crashed.
+ Encapsulates all functionality needed to keep track of the rocket 
+ and the landing site and detect when a collision occurs. 
+ Collider also detects whether rocket landed or crashed.
  */
 function build_Collider(){
     
@@ -529,7 +495,7 @@ function build_InputManager(){
                 rocket.decreaseEngineLevel();
                 break;
             case RIGHT_ARROW:
-                backgroundManager.switchLevel();     //changes game level
+                gameManager.switchLevel();     //changes game level
                 break;
             case SPACEBAR:
                 pause();                            //pauses the game
@@ -569,7 +535,8 @@ function build_GameManager(){
     //properties
     gameManager.count = 0;
     gameManager.gameover = true;
-    gameManager.paused = createjs.Ticker.paused;
+    //gameManager.paused = createjs.Ticker.paused;
+    gameManager.level = 0;
     
     gameManager.gameStep = function(e){
         
@@ -629,11 +596,20 @@ function build_GameManager(){
         rocket.reset();
         build_Rocket();
     }
+    
+    gameManager.switchLevel = function(){
+        
+        if(createjs.Ticker.paused){
+            gameManager.level = (gameManager.level + 1) % 2;
+            backgroundManager.setBackground(gameManager.level);
+        }
+    }
 }
 
 /*
  Encapsulates all functionality necessary to build and animate smoke from the rocket.
- Function is called every time a thruster or engine fires. The generated smoke bitmap is placed near the given point, then fades upward and is removed.
+ Function is called every time a thruster or engine fires. 
+ The generated smoke bitmap is placed near the given point, then fades upward and is removed.
  
  Position and amount of time for fadeout is randomly selected to create a more realistic appearance to the smoke.
  */
@@ -798,6 +774,81 @@ function sleep(duration) {
  break;
  }
  }
+ 
+ backgroundManager.showEarthBackground = function(){
+ var background, slice;
+ 
+ background = stage.getChildByName("earth");
+ slice = stage.getChildByName("earthslice");
+ 
+ background.visible = slice.visible = true;
+ this.hideOceanBackground();
+ }
+ 
+ backgroundManager.hideEarthBackground = function(){
+ var background, slice;
+ 
+ background = stage.getChildByName("earth");
+ slice = stage.getChildByName("earthslice");
+ 
+ background.visible = slice.visible = false;
+ }
+ 
+ backgroundManager.showOceanBackground = function(){
+ var background, slice;
+ 
+ background = stage.getChildByName("ocean");
+ slice = stage.getChildByName("oceanslice");
+ 
+ background.visible = slice.visible = true;
+ this.hideEarthBackground();
+ }
+ 
+ backgroundManager.hideOceanBackground = function(){
+ var background, slice;
+ 
+ background = stage.getChildByName("ocean");
+ slice = stage.getChildByName("oceanslice");
+ 
+ background.visible = slice.visible = false;
+ }
+ 
+ //function used to change the visibility of the background object based on level
+ backgroundManager.show = function(level){
+ switch(level){
+ case 0:
+ backgroundManager.showBackground("earth");
+ break;
+ case 1:
+ backgroundManager.showBackground("ocean");
+ break;
+ }//end switch
+ }
+ 
+ backgroundManager.showBackground = function(name){
+ 
+ var currentBackground, currentSlice, nextBackground, nextSlice;
+ 
+ switch(name){
+ case "earth":
+ currentBackground = stage.getChildByName("ocean");
+ currentSlice = stage.getChildByName("oceanslice");
+ nextBackground = stage.getChildByName("earth");
+ nextSlice = stage.getChildByName("earthslice");
+ break;
+ 
+ case "ocean":
+ currentBackground = stage.getChildByName("earth");
+ currentSlice = stage.getChildByName("earthslice");
+ nextBackground = stage.getChildByName("ocean");
+ nextSlice = stage.getChildByName("oceanslice");
+ break;
+ }//end switch
+ //alert(currentBackground +"," + currentSlice);
+ nextBackground.visible = nextSlice.visible = true;
+ currentBackground.visible = currentSlice.visible = false;
+ }
+
 
  */
 

@@ -32,7 +32,7 @@ function load(){
         {id: "oceanslice", src: "Assets/OceanSlice.png"},
         {id: "pauseScreen", src: "Assets/PauseScreen2.png"},
         {id: "loadScreen", src: "Assets/Loading2.png"},
-        {id: "explosion", src: "Assets/Explosion.png"}
+        {id: "explosion", src: "Assets/Explosion2.png"}
     ]);
 }
 
@@ -168,8 +168,11 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
 
     data = {
         images: [image],
-        frames:{width: 96, height: 96, spacing: 0, count: 12, margin: 0},
-        animations: { boom: [0, 11, "boom", .25]}
+        frames:{width: 96, height: 96, spacing: 0, count: 13, margin: 0},
+        animations: {
+            boom: [0, 11, "gone", .25],
+            gone: 12
+        }
     }; //end data
 
     explosion_sheet = new createjs.SpriteSheet(data);

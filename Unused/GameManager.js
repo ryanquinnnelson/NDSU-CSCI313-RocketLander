@@ -4,8 +4,6 @@
 
 (function () {
 
-
-
     const SPACEBAR = 32;
     const LEFT_ARROW = 37;
     const UP_ARROW = 38;
@@ -16,12 +14,10 @@
     const S_KEY = 83;
     const W_KEY = 87;
 
-    function GameManager(backgroundManager, text){
-        this.addEventListener(onkeydown, this.handleKeyDown);
-        this.addEventListener(onkeyup, this.handleKeyUp);
+    function GameManager(){
+
         this.DisplayObject_constructor();
 
-        this.backgroundManager = backgroundManager;
         this.wKeyDown = false;
         this.sKeyDown = false;
         this.dKeyDown = false;
@@ -34,6 +30,19 @@
     var gm = createjs.extend(GameManager, createjs.DisplayObject);
 
     window.objects.GameManager = createjs.promote(GameManager, "DisplayObject");
+
+    gm.gameStep = function() {
+        if (!createjs.Ticker.paused) {
+
+            if (!gameManager.gameover) {
+                updateGame();
+                gameRender();
+            }
+
+
+            stage.update();
+        }
+    };
 
     gm.handleKeyDown = function(e){
 
@@ -50,10 +59,10 @@
                 this.dKeyDown = true;
                 break;
             case UP_ARROW:
-                window.objects.Rocket.increaseEngineLevel();
+                window.rocket.increaseEngineLevel();
                 break;
             case DOWN_ARROW:
-                rocket.decreaseEngineLevel();
+                window.rocket.decreaseEngineLevel();
                 break;
             case RIGHT_ARROW:
                 this.switchLevel();      //changes game level
@@ -64,24 +73,22 @@
         }
     }
 
-    gm.updateGame = function(e) {
+    gm.updateGame = function() {
 
         if(this.wKeyDown){
-            rocket.fireEngine();
+            window.rocket.fireEngine();
         }
         if(this.aKeyDown){
-            rocket.fireLeftThruster();
+            window.rocket.fireLeftThruster();
         }
         if(this.dKeyDown){
-            rocket.fireRightThruster();
+            window.rocket.fireRightThruster();
         }
+
         rocket.update();
-        collider.update();
+        window.Collider.update();
 
-        //temporary
-
-
-        rocket.render();
+        window.rocket.render();
 
         stage.update();
 
@@ -96,18 +103,20 @@
 
     gm.reset = function() {
         rocket.reset();
-        build_Rocket();
     };
 
     gm.restartGame = function () {
-        createjs.Tween.get(diagText).to({rotation: 0}, 2500).call(gameManager.reset);
+            //wait 2 seconds, then reset game
+            createjs.Tween.get(diagText).to({rotation: 0}, 2500).call(gameManager.reset);
     };
 
     gm.endGame = function() {};
 
     gm.switchLevel = function() {
-        if(gm.paused)
-            this.backgroundManager.switchLevel();
+        if(gm.paused){
+            BackgroundManager.switchLevel();
+        }
+
     };
 
 

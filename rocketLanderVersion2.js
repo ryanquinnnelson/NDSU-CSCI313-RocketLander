@@ -10,7 +10,7 @@ const D_KEY = 68;
 const S_KEY = 83;
 const W_KEY = 87;
 
-var rocket_sheet, fire_sheet, thruster_sheet;
+var rocket_sheet, fire_sheet, thruster_sheet, explosion_sheet;
 var stage, queue;                               //required for createjs library
 var rocket, landingSite;                        //game objects
 var collider, gameManager, backgroundManager, guiManager;   //encapsulated objects
@@ -31,7 +31,9 @@ function load(){
         {id: "earth", src: "Assets/Earth2.png"},
         {id: "earthslice", src: "Assets/EarthSlice.png"},
         {id: "oceanslice", src: "Assets/OceanSlice.png"},
-        {id: "pauseScreen", src: "Assets/PauseScreen2.png"}
+        {id: "pauseScreen", src: "Assets/PauseScreen2.png"},
+        {id: "loadScreen", src: "Assets/Loading2.png"},
+        {id: "explosion", src: "Assets/Explosion.png"}
     ]);
 }
 
@@ -39,6 +41,7 @@ function load(){
 function init(){
     loadGame();
     startGame();
+    guiManager.loadAnimation();
 }
 
 
@@ -66,6 +69,7 @@ function startGame(){
 
     //Ticker object
     createjs.Ticker.framerate = 60;
+
     createjs.Ticker.addEventListener("tick", gameManager.gameStep);
     
     //listen for key / mouse events
@@ -253,7 +257,7 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
     //generic object
     data = {
         images: [image],
-        frames:{width: 50, height: 75, spacing: 0, count: 6, margin: 0},
+        frames:{width:50, height: 75, spacing: 0, count: 6, margin: 0},
         animations: {
             noThrust: 5,                                    //empty frame only
             thrust: [0,4, "thrust", 0.3]                    //continuous animation
@@ -262,11 +266,21 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
     
     //SpriteSheet object
     thruster_sheet = new createjs.SpriteSheet(data);
+
+    image = queue.getResult("explosion");
+
+    data = {
+        images: [image],
+        frames:{width: 96, height: 96, spacing: 0, count: 12, margin: 0},
+        animations: { boom: [0, 11, "boom", .25]}
+    }; //end data
+
+    explosion_sheet = new createjs.SpriteSheet(data);
 }//end buildSpriteSheets()
 
 
 /*
- Performs all operations necessary to instantiate the Rocket object and position it within the stage.
+ Performs all operations necessary to instantiate the rocket object and position it within the stage.
  
  Each time the rocket is built, function calculates a random horizontal position and angle.
  */
@@ -540,7 +554,7 @@ function build_Smoke(endPt){
 function build_Collider(){
     
     collider = new createjs.DisplayObject();
-    
+
     //injected properties
     //variables
     collider.rocketAltitude;    //height above bottom of stage in pixels
@@ -586,7 +600,7 @@ function build_Collider(){
             
             //checklist for proper landing
             goodRotation  = Math.abs(rocket.rotation) < 5; //rotation < 5 degrees
-            goodYSpeed    = Math.abs(rocket.velocityY) < 10; //speed < 10 m/s
+            goodYSpeed    = Math.abs(rocket.velocityY) < 5; //speed < 10 m/s
             goodXSpeed    = Math.abs(rocket.velocityX) < 10;
             
             //rocket horizontally in correct location
@@ -611,13 +625,14 @@ function build_Collider(){
     collider.rocketLanded = function(){
         rocket.land(landingSite.y);
         guiManager.showLandedText();
-        gameManager.restartGame();
+        setTimeout(gameManager.restartGame(), 1000);
     }
     
     //triggers functions from rocket and gameManager related to a crashed rocket
     collider.rocketCrashed = function(){
         rocket.crash(landingSite.y);
-        gameManager.restartGame();
+        guiManager.explode(rocket.x);
+        setTimeout(gameManager.restartGame(), 1000);
     }
 }
 
@@ -653,7 +668,6 @@ function build_GameManager(){
                 gameUpdate();
                 gameRender();
             }
-            console.log(guiManager.landedText.height + "   " + guiManager.landedText.width);
             
             stage.update();
         }
@@ -723,6 +737,15 @@ function build_Text(){
 function build_tempBar(){
     tempBar = new objects.FuelBar(750,50,"green", "black");
     stage.addChild(tempBar);
+}
+
+function sleep(duration) {
+    var start = new Date().getTime();
+    for (var i = 0; i < 1e7; i++) {
+        if ((new Date().getTime() - start) > milliseconds){
+            break;
+        }
+    }
 }
 
 

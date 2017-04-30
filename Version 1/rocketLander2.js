@@ -2,7 +2,7 @@
 
 /*
  This game involves the depiction of a SpaceX Falcon 9 rocket.
- Rocket engine flame animation is smaller than full width of rocket engines to reflect that the real rocket lands using a single engine (center).
+ rocket engine flame animation is smaller than full width of rocket engines to reflect that the real rocket lands using a single engine (center).
  
  */
 //=================================================================================//
@@ -140,7 +140,7 @@ function load(){
  - pausedText is the text that appears when game is paused
  - gamoverText is the text that appears if player lands rocket
  - physicsText is the text displaying statistics of velocity, altitude, etc.
- - fuelText is the text displaying Rocket Fuel and Monopropellant levels
+ - fuelText is the text displaying rocket Fuel and Monopropellant levels
  - helpText informs the player of how to pause the game
  
  Also builds graphic visualization (fill bars) of remaining fuel levels.
@@ -161,7 +161,7 @@ function buildGUI(){
         + "Velocity (x): 100 m/s\n\n" + "Velocity (y): 100 m/s\n\n"
         + "Rotation: 180 degrees \n\n" + "Altitude: 400 m\n\n"
         + "Thrust Level: 4/4 \n\n";
-    m4 = "Rocket Fuel: " + START_FUEL + " / " + START_FUEL + "\n\n" + "Monopropellant: " + START_MONO + " / " + START_MONO;
+    m4 = "rocket Fuel: " + START_FUEL + " / " + START_FUEL + "\n\n" + "Monopropellant: " + START_MONO + " / " + START_MONO;
     m5 = "Press SPACEBAR to pause gameplay.";
     
     //location coordinates for various GUI Text objects
@@ -200,7 +200,7 @@ function buildGameObjects(){
  Calculates random position and angle rocket will start at for given attempt.
  Random position is limited to a certain horizontal range.
  Random angle is limited to a certain range.
- Rocket begins at the same height every time.
+ rocket begins at the same height every time.
  */
 function buildAndPlaceRocket(){
     
@@ -737,7 +737,7 @@ function radiansToDegrees(radians){
 
 /*
  Performs all operations necessary to built the rocket object.
- Rocket is designed as a Container. It stores multiple sprites and game objects used to create visualization and animation.
+ rocket is designed as a Container. It stores multiple sprites and game objects used to create visualization and animation.
  */
 function buildRocket(regX, regY, angle){ //alert("buildRocket()");
     
@@ -1083,7 +1083,7 @@ function updateStats(){
     + "Thrust Level: " + thrustLevel + "/4\n\n";
     
     //fuel
-    fuelText.text = "Rocket Fuel: " + fuel + " / " + START_FUEL + "\n\n"
+    fuelText.text = "rocket Fuel: " + fuel + " / " + START_FUEL + "\n\n"
     + "Monopropellant: " + mono + " / " + START_MONO;
 }
 

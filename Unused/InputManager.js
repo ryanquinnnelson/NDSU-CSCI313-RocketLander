@@ -15,7 +15,7 @@ const W_KEY = 87;
 
     function inputManager(){
         this.DisplayObject_constructor();
-        this.
+
     }
 
     var im = createjs.extend(inputManager, createjs.DisplayObject);

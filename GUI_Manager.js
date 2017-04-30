@@ -11,6 +11,9 @@
 
         this.DisplayObject_constructor();
 
+        this.loadScreen = new createjs.Bitmap("Assets/Loading2.png");
+
+
         // Physics Text
         this.physText = new createjs.Container();
 
@@ -46,11 +49,11 @@
         //Main engine fuel bar
         var fuelBar = new window.objects.FuelBar(750, 110, "#0A6FB4", "#000000");
         fuelBar.name = "fuelBar";
-        fuelBar.setLabel("Rocket Fuel");
+        fuelBar.setLabel("rocket Fuel");
         this.bars.addChild(monoBar, fuelBar);
 
         //Text displayed after successful landing.
-        this.landedText = new createjs.Text("LANDED!", "140px Impact", "#FF0911");
+        this.landedText = new createjs.Text("LANDED!", "140px Impact", "#0204fa");
         this.landedText.set({regX:(225), regY:(100)});
         this.landedText.set({x:600, y:600});
         this.landedText.visible = false;
@@ -59,9 +62,20 @@
         var pauseHint = new createjs.Text("Press Spacebar to pause.", "30px Arial", "#000000");
         pauseHint.set({x:810, y:8});
 
+        this.explosion = new createjs.Sprite(explosion_sheet, "boom");
+        this.explosion.set({regX: 32}, {regY:32});
+        this.explosion.y = 800;
+        this.explosion.set({scaleX: 5, scaleY: 5});
+        this.explosion.visible = false;
 
-        stage.addChild(this.pauseScreen, this.landedText, this.physText, this.bars, this.pauseScreen,  pauseHint);
+        this.crashedText = new createjs.Text("CRASHED!", "140px Impact", "#f00911");
+        this.crashedText.set({regX:(275), regY:(100)});
+        this.crashedText.set({x:600, y:600});
+        this.crashedText.visible = false;
 
+
+
+        stage.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physText, this.bars, this.pauseScreen,  pauseHint, this.loadScreen);
 
     };
 
@@ -104,10 +118,39 @@
             .to({alpha:.6}, 300)
             .wait(100)
             .to({alpha:1}, 300)
-            .to({visible:false}, 0)
-            .wait(2000);
+            .to({visible:false}, 0);
 
         createjs.Ticker.paused = false;
     };
+
+    guim.explode = function(x) {
+
+        this.explosion.x = x - 75;
+        this.explosion.visible = true;
+
+        this.explosion.gotoAndPlay("boom");
+        createjs.Tween.get(this.explosion)
+            .to({visible: false}, 900);
+
+        this.crashedText.visible = true;
+
+        createjs.Tween.get(this.crashedText)
+            .to({alpha:.6}, 300)
+            .wait(100)
+            .to({alpha:1}, 300)
+            .to({alpha:.6}, 300)
+            .wait(100)
+            .to({alpha:1}, 300)
+            .to({alpha:.6}, 300)
+            .wait(100)
+            .to({alpha:1}, 300)
+            .to({visible:false}, 0);
+    };
+
+    guim.loadAnimation = function() {
+
+        createjs.Tween.get(this.loadScreen).wait(1000).to({alpha:0}, 1000).wait(500);
+
+    }
 
 }());

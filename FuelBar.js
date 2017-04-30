@@ -84,7 +84,7 @@
          
          switch(type){
              case "fuel":
-                 m = "Rocket Fuel: ";
+                 m = "rocket Fuel: ";
                  break;
              case "mono":
                  m = "Monopropellant: ";

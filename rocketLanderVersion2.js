@@ -286,7 +286,7 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
  */
 function build_Rocket(){ //alert("build");
     
-    const START_Y = -150;    //-150
+    const START_Y = -200;    //-150
     var randomX, randomAngle, shiftX, startY;
     
     //calculate position and angle values needed for rocket initialization
@@ -657,7 +657,7 @@ function build_GameManager(){
     
     //properties
     gameManager.count = 0;
-    gameManager.gameover = false;
+    gameManager.gameover = true;
     gameManager.paused = createjs.Ticker.paused;
     
     gameManager.gameStep = function(e){

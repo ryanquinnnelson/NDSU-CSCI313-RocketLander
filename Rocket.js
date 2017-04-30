@@ -374,6 +374,10 @@
          //visibility
          this.visible = true;
  
+         //display opening of landing legs again
+         this.getChildByName("body").gotoAndPlay("deployFins");
+         this.getChildByName("legs").gotoAndPlay("deployLegs");
+ 
          //event listeners
          //r.onLeftThrusterFiring = []; //store functions to call
          //r.onRightThrusterFiring = [];

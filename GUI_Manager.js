@@ -86,6 +86,11 @@
 
     window.objects.GUI_Manager = createjs.promote(GUI_Manager, "DisplayObject");
 
+ 
+    guim.update = function(object){
+        this.updatePhysText(object.getPhysText());
+        this.updateBars(object.getMonoPercent(), object.getFuelPercent());
+    }
 
 
     guim.updatePhysText = function(input){

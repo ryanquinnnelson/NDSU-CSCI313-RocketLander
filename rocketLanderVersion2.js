@@ -1,21 +1,11 @@
-//CONSTANTS
-//integers represent the keycode of certain keys on the keyboard
-const SPACEBAR = 32;
-const LEFT_ARROW = 37;
-const UP_ARROW = 38;
-const RIGHT_ARROW = 39;
-const DOWN_ARROW = 40;
-const A_KEY = 65;
-const D_KEY = 68;
-const S_KEY = 83;
-const W_KEY = 87;
+//rocketLanderVersion2.js
 
 var rocket_sheet, fire_sheet, thruster_sheet, explosion_sheet;
-var stage, queue;                               //required for createjs library
-var rocket, landingSite;                        //game objects
-var collider, gameManager, backgroundManager, guiManager;   //encapsulated objects
-var diagText, tempBar;
+var stage, queue;              //required for createjs library
+var rocket, landingSite;       //game objects
 
+//encapsulated objects
+var collider, gameManager, backgroundManager, guiManager, inputManager;
 
 var wKeyDown = sKeyDown = dKeyDown = aKeyDown = false;
 
@@ -41,149 +31,54 @@ function load(){
 function init(){
     loadGame();
     startGame();
-    guiManager.loadAnimation();
 }
 
 
 function loadGame(){ //alert("loadGame()");
+    
+    //create stage
     stage = new createjs.Stage("canvas");
+    
+    //objects
     build_SpriteSheets();
     build_Rocket();
     build_LandingSite();
     build_BackgroundManager();
     build_Collider();
-    //build_tempBar();
-    //build_GUI();
-    //build_tempBar();
     build_GUIManager();
-
     build_GameManager();
-    //build_Rect(0,0, 500, 500, "red"); //debug
-    build_Text();   //debug
-    //stage.addChild(rocket, landingSite, gui);
+    build_InputManager();
+
+    //add to stage
     stage.addChild(landingSite, guiManager);
-    //alert(stage.children);
+    
+    //show load screen
+    guiManager.loadAnimation();
 }
 
 function startGame(){
 
     //Ticker object
     createjs.Ticker.framerate = 60;
-
     createjs.Ticker.addEventListener("tick", gameManager.gameStep);
     
     //listen for key / mouse events
-    window.onkeydown  = detectKey;  //calls detectKey() for "keydown" event
-    window.onkeyup = removeKey;     //calls removeKey() for "keyup" event
+    window.onkeydown  = inputManager.detectKey;  //calls detectKey() for "keydown" event
+    window.onkeyup = inputManager.removeKey;     //calls removeKey() for "keyup" event
 }
 
-
-
-function gameUpdate(){
-    
-    if(wKeyDown){
-        rocket.fireEngine();
-    }
-    if(aKeyDown){
-        rocket.fireLeftThruster();
-    }
-    if(dKeyDown){
-        rocket.fireRightThruster();
-    }
-    rocket.update();
-    collider.update();
-
-    //gui.update();
-    
-    //temporary
-    //diagText.text = rocket.toString();
-
-    guiManager.updatePhysText(rocket.getPhysText());
-    guiManager.updateBars(rocket.getMonoPercent(), rocket.getFuelPercent());
-    //temporary
-
-    //tempBar.updateFill(rocket.getMono() / rocket.getStartMono() );
-    //diagText.text = rocket.toString();
-}
-
-function gameRender(){
-    rocket.render();
-}
 
 function pause(){
     createjs.Ticker.paused = !createjs.Ticker.paused;
     gameManager.paused = !gameManager.paused;
     guiManager.switchPauseScreen();
+    
     stage.update();
 }
 
-//=================================================================================//
-//                                 Game Controls                                   //
-//=================================================================================//
-
-/*
- Changes flags for movement control based on keyboard input.
- Calls certain methods for other keyboard input.
- */
-function detectKey(e){ //alert("detectKey()");
-    
-    //type check for known browser issues
-    e = !e ? window.event : e; //if event is not event, get window.event;
-
-    switch(e.keyCode) {
-        case W_KEY:
-            wKeyDown = true;
-            break;
-        case A_KEY:
-            //rocket.fireLeftThruster();
-            aKeyDown = true;
-            break;
-        case D_KEY:
-            //rocket.fireRightThruster();
-            dKeyDown = true;
-            break;
-        case UP_ARROW:
-            rocket.increaseEngineLevel();
-            break;
-        case DOWN_ARROW:
-            rocket.decreaseEngineLevel();
-            break;
-        case RIGHT_ARROW:
-            backgroundManager.switchLevel();     //changes game level
-            break;
-        case SPACEBAR:
-            pause();            //pauses the game
-            break;
-    }
-}
-
-/*
- Changes flags for movemenet control based on keyboard input.
- */
-function removeKey(e){ //alert("removeKey()");
-    
-    //type check for known browser issues
-    e = !e ? window.event : e;  //if event is not event, get window.event;
-    
-    switch(e.keyCode) {
-        case W_KEY:
-            wKeyDown = false;    //flag for movement
-            rocket.cutoutEngine();
-            break;
-        case A_KEY:
-            aKeyDown = false;
-            rocket.cutoutLeftThruster();
-            break;
-        case D_KEY:
-            dKeyDown = false;
-            rocket.cutoutRightThruster();
-            break;
-    }
-}
-
 
 //=================================================================================//
-//                                   Load Functions                                //
+//                       Load Functions  - Animations                              //
 //=================================================================================//
 
 /*
@@ -279,9 +174,13 @@ function build_SpriteSheets(){ //alert("buildSpriteSheets()");
 }//end buildSpriteSheets()
 
 
+//=================================================================================//
+//                        Load Functions  - Game Objects                           //
+//=================================================================================//
+
+
 /*
  Performs all operations necessary to instantiate the rocket object and position it within the stage.
- 
  Each time the rocket is built, function calculates a random horizontal position and angle.
  */
 function build_Rocket(){ //alert("build");
@@ -369,6 +268,11 @@ function build_LandingSite(){
         this.visible = false;
     }
 }//end build_landingSite
+
+
+//=================================================================================//
+//                    Load Functions  - Encapsulated Objects                       //
+//=================================================================================//
 
 /*
  Encapsulates all operations necessary to build the backgrounds of the game as well as an object to manage them. Slices of the backgrounds are drawn in front of the rocket  to hide any flame extending below the landing site level. This gives the impression that the ground is solid.
@@ -493,62 +397,6 @@ function build_BackgroundManager(){
 }
 
 /*
- Encapsualtes all functionality necessary to build and animate smoke from the rocket.
- Function is called every time a thruster or engine fires. The generated smoke bitmap is placed near the given point, then fades upward and is removed.
- 
- Position and amount of time for fadeout is randomly selected to create a more realistic appearance to the smoke.
- */
-function build_Smoke(endPt){
-    
-    var b, image,randomX, randomShift, randomDirection, globalPt, randomMS;
-
-    //get x,y of endPt, relative to stage
-    if(endPt){ //not undefined
-        globalPt = endPt.localToGlobal(endPt.x, endPt.y);
-        
-        //calculate random values for use with positioning
-        randomDirection = Math.random() > 0.5 ? -1 : 1; //50% chance either direction
-        randomX = Math.floor(Math.random() * 30);
-        randomShift = randomX * randomDirection;
-        
-        //HTML image object
-        image = queue.getResult("smoke");
-        
-        //Bitmap object
-        b = new createjs.Bitmap(image);
-        b.x = globalPt.x - b.image.width/2 + randomShift;    //center horizontally
-        b.y = globalPt.y - b.image.height/2;                 //center vertically
-        b.alpha = 0.5;                                       //slightly transparent
-        b.name = "smoke";
-        
-        //injected properties
-        b.complete = function(){
-
-            stage.removeChild(this);
-        }
-        
-        //smoke bitmap visibility is decreased and object is moved upward
-        b.fadeout = function(e){
-            
-            var randomMS;
-            
-            //calculate random amount of time to add to standard fadeout time
-            randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
-            
-            //uses tween to fade target while also moving it upward
-            //calls for sprite to be removed after completing this animation
-            createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(b.complete);
-        }
-        
-        //add event listener to bitmap to be called when object added to stage
-        b.addEventListener("added", b.fadeout);
-        
-        //add to container
-        stage.addChild(b);
-    }//end if
-}//end build_Smoke
-
-/*
  Encapsulates all functionality needed to keep track of the rocket and the landing site and detect when a collision occurs. Collider also detects whether rocket landed or crashed.
  */
 function build_Collider(){
@@ -640,16 +488,79 @@ function build_GUIManager(){
     guiManager = new objects.GUI_Manager();
 }
 
-/*
-function build_GUI(){
+function build_InputManager(){
     
-    var image;
+    //CONSTANTS
+    //integers represent the keycode of certain keys on the keyboard
+    const SPACEBAR = 32;
+    const LEFT_ARROW = 37;
+    const UP_ARROW = 38;
+    const RIGHT_ARROW = 39;
+    const DOWN_ARROW = 40;
+    const A_KEY = 65;
+    const D_KEY = 68;
+    const S_KEY = 83;
+    const W_KEY = 87;
     
-    image = queue.getResult("pauseScreen");
+    inputManager = new createjs.DisplayObject();
     
-    gui = new objects.GUI(image);
+    /*
+     Changes flags for movement control based on keyboard input.
+     Calls certain methods for other keyboard input.
+     */
+    inputManager.detectKey = function(e){
+        //type check for known browser issues
+        e = !e ? window.event : e; //if event is not event, get window.event;
+        
+        switch(e.keyCode) {
+            case W_KEY:
+                wKeyDown = true;
+                break;
+            case A_KEY:
+                aKeyDown = true;
+                break;
+            case D_KEY:
+                dKeyDown = true;
+                break;
+            case UP_ARROW:
+                rocket.increaseEngineLevel();
+                break;
+            case DOWN_ARROW:
+                rocket.decreaseEngineLevel();
+                break;
+            case RIGHT_ARROW:
+                backgroundManager.switchLevel();     //changes game level
+                break;
+            case SPACEBAR:
+                pause();                            //pauses the game
+                break;
+        }//end switch
+    }//end detectKey
+    
+    /*
+     Changes flags for movement control based on keyboard input.
+     */
+    inputManager.removeKey = function(e){
+        //type check for known browser issues
+        e = !e ? window.event : e;  //if event is not event, get window.event;
+        
+        switch(e.keyCode) {
+            case W_KEY:
+                wKeyDown = false;    //flag for movement
+                rocket.cutoutEngine();
+                break;
+            case A_KEY:
+                aKeyDown = false;
+                rocket.cutoutLeftThruster();
+                break;
+            case D_KEY:
+                dKeyDown = false;
+                rocket.cutoutRightThruster();
+                break;
+        }//end switch
+    }//end removeKey
+    
 }
- */
 
 function build_GameManager(){
 
@@ -665,12 +576,33 @@ function build_GameManager(){
         if(!createjs.Ticker.paused){
             
             if(!gameManager.gameover){
-                gameUpdate();
-                gameRender();
+                gameManager.gameUpdate();
+                gameManager.gameRender();
             }
             
             stage.update();
         }
+    }
+    
+    gameManager.gameUpdate = function(){
+        
+        if(wKeyDown){
+            rocket.fireEngine();
+        }
+        if(aKeyDown){
+            rocket.fireLeftThruster();
+        }
+        if(dKeyDown){
+            rocket.fireRightThruster();
+        }
+        
+        rocket.update();
+        collider.update();
+        guiManager.update(rocket);
+    }
+    
+    gameManager.gameRender = function(){
+        rocket.render();
     }
     
     gameManager.restartGame = function(){
@@ -685,7 +617,7 @@ function build_GameManager(){
         if(gameManager.count === 1){
             
             //wait 2 seconds, then reset game
-            createjs.Tween.get(diagText).to({rotation: 0}, 2500).call(gameManager.reset);
+            createjs.Tween.get(collider).to({rotation:0}, 2500).call(gameManager.reset);
         }
     }
     
@@ -693,14 +625,67 @@ function build_GameManager(){
 
         gameManager.count = 0;
         gameManager.gameover = false;
-        
-        //stage.removeChild(rocket);
+
         rocket.reset();
         build_Rocket();
-        //alert(rocket.children);
-        //stage.addChildAt(rocket,3);
     }
 }
+
+/*
+ Encapsulates all functionality necessary to build and animate smoke from the rocket.
+ Function is called every time a thruster or engine fires. The generated smoke bitmap is placed near the given point, then fades upward and is removed.
+ 
+ Position and amount of time for fadeout is randomly selected to create a more realistic appearance to the smoke.
+ */
+function build_Smoke(endPt){
+    
+    var b, image,randomX, randomShift, randomDirection, globalPt, randomMS;
+    
+    //get x,y of endPt, relative to stage
+    if(endPt){ //not undefined
+        globalPt = endPt.localToGlobal(endPt.x, endPt.y);
+        
+        //calculate random values for use with positioning
+        randomDirection = Math.random() > 0.5 ? -1 : 1; //50% chance either direction
+        randomX = Math.floor(Math.random() * 30);
+        randomShift = randomX * randomDirection;
+        
+        //HTML image object
+        image = queue.getResult("smoke");
+        
+        //Bitmap object
+        b = new createjs.Bitmap(image);
+        b.x = globalPt.x - b.image.width/2 + randomShift;    //center horizontally
+        b.y = globalPt.y - b.image.height/2;                 //center vertically
+        b.alpha = 0.5;                                       //slightly transparent
+        b.name = "smoke";
+        
+        //injected properties
+        b.complete = function(){
+            
+            stage.removeChild(this);
+        }
+        
+        //smoke bitmap visibility is decreased and object is moved upward
+        b.fadeout = function(e){
+            
+            var randomMS;
+            
+            //calculate random amount of time to add to standard fadeout time
+            randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
+            
+            //uses tween to fade target while also moving it upward
+            //calls for sprite to be removed after completing this animation
+            createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(b.complete);
+        }
+        
+        //add event listener to bitmap to be called when object added to stage
+        b.addEventListener("added", b.fadeout);
+        
+        //add to container
+        stage.addChild(b);
+    }//end if
+}//end build_Smoke
 
 //=================================================================================//
 //                                      Debug                                      //
@@ -751,20 +736,69 @@ function sleep(duration) {
 
 /*
  //DEPRECATED
- function fadeout(e){
- var randomMS;
+ const SPACEBAR = 32;
+ const LEFT_ARROW = 37;
+ const UP_ARROW = 38;
+ const RIGHT_ARROW = 39;
+ const DOWN_ARROW = 40;
+ const A_KEY = 65;
+ const D_KEY = 68;
+ const S_KEY = 83;
+ const W_KEY = 87;
  
- //calculate random amount of time to add to standard fadeout time
- randomMS = Math.floor(Math.random() * 500) + 3000;    //3000 - 3500
+ function detectKey(e){ //alert("detectKey()");
  
- //uses tween to fade target while also moving it upward
- //calls for sprite to be removed after completing this animation
- createjs.Tween.get(e.target).to({alpha: 0, y: e.target.y - 150}, randomMS).call(removeBitmap);
+ //type check for known browser issues
+ e = !e ? window.event : e; //if event is not event, get window.event;
+ 
+ switch(e.keyCode) {
+ case W_KEY:
+ wKeyDown = true;
+ break;
+ case A_KEY:
+ //rocket.fireLeftThruster();
+ aKeyDown = true;
+ break;
+ case D_KEY:
+ //rocket.fireRightThruster();
+ dKeyDown = true;
+ break;
+ case UP_ARROW:
+ rocket.increaseEngineLevel();
+ break;
+ case DOWN_ARROW:
+ rocket.decreaseEngineLevel();
+ break;
+ case RIGHT_ARROW:
+ backgroundManager.switchLevel();     //changes game level
+ break;
+ case SPACEBAR:
+ pause();            //pauses the game
+ break;
+ }
  }
  
- function removeBitmap(){
- stage.removeChild(this);
+ function removeKey(e){ //alert("removeKey()");
+ 
+ //type check for known browser issues
+ e = !e ? window.event : e;  //if event is not event, get window.event;
+ 
+ switch(e.keyCode) {
+ case W_KEY:
+ wKeyDown = false;    //flag for movement
+ rocket.cutoutEngine();
+ break;
+ case A_KEY:
+ aKeyDown = false;
+ rocket.cutoutLeftThruster();
+ break;
+ case D_KEY:
+ dKeyDown = false;
+ rocket.cutoutRightThruster();
+ break;
  }
+ }
+
  */
 
 

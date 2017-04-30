@@ -9,13 +9,13 @@
 
     function GUI_Manager(){
 
-        this.DisplayObject_constructor();
+        this.Container_constructor();
 
         this.loadScreen = new createjs.Bitmap("Assets/Loading2.png");
 
 
         // Physics Text
-        this.physText = new createjs.Container();
+        this.physBox = new createjs.Container();
 
         //Background box
         var g = new createjs.Graphics().beginFill("#646464").drawRoundRect(0,0,250, 175, 5);
@@ -32,7 +32,7 @@
         newText.name = "newText";
         newText.x = textBox.x + 10;
         newText.y = textBox.y + 10;
-        this.physText.addChild(textBox, newText);
+        this.physBox.addChild(textBox, newText);
 
         //Pause screen
         this.pauseScreen = new createjs.Bitmap("Assets/PauseScreen.png");
@@ -65,26 +65,28 @@
         var pauseHint = new createjs.Text("Press Spacebar to pause.", "30px Arial", "#000000");
         pauseHint.set({x:810, y:8});
 
+        //Explosion sprite
         this.explosion = new createjs.Sprite(explosion_sheet, "boom");
         this.explosion.set({regX: 32}, {regY:32});
         this.explosion.y = 800;
         this.explosion.set({scaleX: 5, scaleY: 5});
         this.explosion.visible = false;
 
+        //Text displayed after crashed landing.
         this.crashedText = new createjs.Text("CRASHED!", "140px Impact", "#f00911");
         this.crashedText.set({regX:(275), regY:(100)});
         this.crashedText.set({x:600, y:500});
         this.crashedText.visible = false;
 
 
-
-        stage.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physText, this.bars, this.pauseScreen,  pauseHint, this.loadScreen);
+        //add to container
+        this.addChild(this.pauseScreen, this.landedText, this.crashedText, this.explosion, this.physBox, this.bars, this.pauseScreen,  pauseHint, this.loadScreen);
 
     };
 
-    var guim = createjs.extend(GUI_Manager, createjs.DisplayObject);
+    var guim = createjs.extend(GUI_Manager, createjs.Container);
 
-    window.objects.GUI_Manager = createjs.promote(GUI_Manager, "DisplayObject");
+    window.objects.GUI_Manager = createjs.promote(GUI_Manager, "Container");
 
  
     guim.update = function(object){
@@ -94,7 +96,7 @@
 
 
     guim.updatePhysText = function(input){
-        this.physText.getChildByName("newText").text = input;
+        this.physBox.getChildByName("newText").text = input;
     };
 
     guim.updateBars = function(monoPercent, fuelPercent) {

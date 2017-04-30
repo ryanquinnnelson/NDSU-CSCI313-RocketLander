@@ -35,8 +35,8 @@
         this.physText.addChild(textBox, newText);
 
         //Pause screen
-        this.pauseScreen = new createjs.Bitmap("Assets/PauseScreen2.png");
-        this.pauseScreen.alpha = 0.8;
+        this.pauseScreen = new createjs.Bitmap("Assets/PauseScreen.png");
+        this.pauseScreen.alpha = 0.9;
         this.pauseScreen.x = 200;
         this.pauseScreen.y = 250;
         this.pauseScreen.visible = false;
@@ -58,7 +58,7 @@
         //Text displayed after successful landing.
         this.landedText = new createjs.Text("LANDED!", "140px Impact", "#0204fa");
         this.landedText.set({regX:(225), regY:(100)});
-        this.landedText.set({x:600, y:600});
+        this.landedText.set({x:600, y:500});
         this.landedText.visible = false;
 
         //Pause hint
@@ -73,7 +73,7 @@
 
         this.crashedText = new createjs.Text("CRASHED!", "140px Impact", "#f00911");
         this.crashedText.set({regX:(275), regY:(100)});
-        this.crashedText.set({x:600, y:600});
+        this.crashedText.set({x:600, y:500});
         this.crashedText.visible = false;
 
 
@@ -157,7 +157,7 @@
 
     guim.loadAnimation = function(gameManager) {
 
-        createjs.Tween.get(this.loadScreen).wait(1000).to({alpha:0}, 1000).wait(500).call(gameManager.reset);
+        createjs.Tween.get(this.loadScreen).wait(1000).to({alpha:0}, 1000).wait(500).call(gameManager.pauseAndReset);
 
     }
 

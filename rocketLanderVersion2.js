@@ -31,7 +31,7 @@ function load(){
         {id: "earthslice", src: "Assets/EarthSlice.png"},
         {id: "oceanslice", src: "Assets/OceanSlice.png"},
         {id: "pauseScreen", src: "Assets/PauseScreen2.png"},
-        {id: "loadScreen", src: "Assets/Loading2.png"},
+        {id: "loadScreen", src: "Assets/Loading.png"},
         {id: "explosion", src: "Assets/Explosion2.png"}
     ]);
 }
@@ -416,7 +416,7 @@ function build_Collider(){
             //checklist for proper landing
             goodRotation  = Math.abs(rocket.rotation) < 5; //rotation < 5 degrees
             goodYSpeed    = Math.abs(rocket.velocityY) < 5; //speed < 10 m/s
-            goodXSpeed    = Math.abs(rocket.velocityX) < 10;
+            goodXSpeed    = Math.abs(rocket.velocityX) < 5;
             
             //rocket horizontally in correct location
             pastLeftEdge = (rocket.nextX - shiftX >= landingSite.x);
@@ -634,6 +634,11 @@ function build_GameManager(){
         guiManager.switchPauseScreen();
         
         stage.update();
+    }
+    
+    GM.pauseAndReset = function(){
+        GM.reset();
+        GM.pause();
     }
 }
 

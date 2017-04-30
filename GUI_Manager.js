@@ -23,9 +23,12 @@
         textBox.alpha = 0.7;
         textBox.x = 900;
         textBox.y = 170;
+ 
+        //base text message
+        var m = "Velocity(x): n/a\nVelocity(y): n/a\nRotation: n/a\nAltitude: n/a\nThrust: n/a";
 
         //Displayed text
-        var newText = new createjs.Text("", "30px Arial", "#000000");
+        var newText = new createjs.Text(m, "30px Arial", "#000000");
         newText.name = "newText";
         newText.x = textBox.x + 10;
         newText.y = textBox.y + 10;

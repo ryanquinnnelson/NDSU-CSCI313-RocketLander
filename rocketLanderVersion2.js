@@ -228,7 +228,7 @@ function build_LandingSite(){
     
     //Shape
     landingSite = new createjs.Shape();
-    landingSite.visible = false;
+    landingSite.visible = true;
     
     //createjs properties
     landingSite.graphics.beginFill("green").drawRect(0, 0, START_W, START_H);
@@ -612,6 +612,7 @@ function build_GameManager(){
         
         if(createjs.Ticker.paused){
             GM.level = (GM.level + 1) % 2;
+            landingSite.redraw(GM.level);
             BM.setBackground(GM.level);
         }
     }

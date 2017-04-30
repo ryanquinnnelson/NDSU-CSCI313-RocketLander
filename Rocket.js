@@ -801,8 +801,8 @@
      //performs all animations required to simulate a rocket landing
      r.landedAnimation = function(){
          this.cutoutEngine();
-         this.fireLeftThruster();
-         this.fireRightThruster();
+         //this.fireLeftThruster();
+         //this.fireRightThruster();
          this.closeFins();
      }
     //==========================================================================//

@@ -515,10 +515,12 @@
          //whether thruster is firing and fuel remains
          if(!isThrusting && r.mono > 0){  //so change is made only once
              child.gotoAndPlay("thrust");
+             this.getChildByName("body").gotoAndPlay("finsLeft");
              r.torque += TORQUE;
          }
          else if(isThrusting && r.mono <= 0){
              child.gotoAndPlay("noThrust");
+             this.getChildByName("body").gotoAndPlay("deployedFins");
              r.torque = 0;
          }//end if
  
@@ -551,10 +553,12 @@
          //whether thruster is firing and fuel remains
          if(!isThrusting && r.mono > 0){  //so change is made only once
              child.gotoAndPlay("thrust");
+             this.getChildByName("body").gotoAndPlay("finsRight");
              r.torque -= TORQUE;
          }
          else if(isThrusting && r.mono <= 0){
              child.gotoAndPlay("noThrust");
+             this.getChildByName("body").gotoAndPlay("deployedFins");
              r.torque = 0;
          }//end if
  
@@ -586,6 +590,7 @@
          //update animation and torque
          if(isThrusting){  //so change is made only once
              child.gotoAndPlay("noThrust");
+             this.getChildByName("body").gotoAndPlay("deployedFins");
              r.torque -= TORQUE;
          }
      }//end cutoutLeftThruster
@@ -603,6 +608,7 @@
          //update animation and torque
          if(isThrusting){  //so change is made only once
              child.gotoAndPlay("noThrust"); //set animation
+             this.getChildByName("body").gotoAndPlay("deployedFins");
              r.torque += TORQUE;    //set torque
          }
      }//end cutoutRightThruster
@@ -615,6 +621,10 @@
          else{
              return this.getChildByName("thrusterRPt");
          }
+     }
+ 
+     r.closeFins = function(){
+         this.getChildByName("body").gotoAndPlay("closeFins");
      }
  
  
@@ -793,6 +803,7 @@
          this.cutoutEngine();
          this.fireLeftThruster();
          this.fireRightThruster();
+         this.closeFins();
      }
     //==========================================================================//
     //                               Misc Functions                             //
